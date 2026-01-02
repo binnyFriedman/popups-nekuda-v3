@@ -27,6 +27,15 @@ class Popup_Admin {
             'normal',
             'high'
         );
+
+        add_meta_box(
+            'popup_cookie_scheduling',
+            __('Cookie & Scheduling', 'popups-nekuda'),
+            [$this, 'render_cookie_scheduling'],
+            'popup',
+            'normal',
+            'high'
+        );
     }
 
     /**
@@ -49,6 +58,39 @@ class Popup_Admin {
             'default' => '3',
             'class'   => 'popup-field--timeout',
             'attrs'   => 'min="1" step="1"',
+        ]);
+    }
+
+    /**
+     * Render Cookie & Scheduling meta box
+     */
+    public function render_cookie_scheduling(\WP_Post $post): void {
+        $cookie_key = Popup_Fields::get($post->ID, '_popup_cookie_key', '');
+        if (empty($cookie_key) && $post->post_name) {
+            $cookie_key = $post->post_name;
+        }
+
+        Popup_Fields::text($post->ID, '_popup_cookie_key', [
+            'label'   => __('Cookie Key', 'popups-nekuda'),
+            'default' => $cookie_key,
+            'attrs'   => 'placeholder="auto-generated-from-slug"',
+        ]);
+
+        Popup_Fields::text($post->ID, '_popup_cookie_expiry', [
+            'label'   => __('Cookie Expiry (days)', 'popups-nekuda'),
+            'type'    => 'number',
+            'default' => '30',
+            'attrs'   => 'min="1" step="1"',
+        ]);
+
+        Popup_Fields::text($post->ID, '_popup_schedule_start', [
+            'label' => __('Schedule Start Date (optional)', 'popups-nekuda'),
+            'type'  => 'date',
+        ]);
+
+        Popup_Fields::text($post->ID, '_popup_schedule_end', [
+            'label' => __('Schedule End Date (optional)', 'popups-nekuda'),
+            'type'  => 'date',
         ]);
     }
 
@@ -77,6 +119,19 @@ class Popup_Admin {
 
         $timeout = absint($_POST['_popup_trigger_timeout'] ?? 3);
         Popup_Fields::save($post_id, '_popup_trigger_timeout', $timeout);
+
+        // Cookie & scheduling
+        $cookie_key = sanitize_key($_POST['_popup_cookie_key'] ?? '');
+        Popup_Fields::save($post_id, '_popup_cookie_key', $cookie_key);
+
+        $cookie_expiry = absint($_POST['_popup_cookie_expiry'] ?? 30);
+        Popup_Fields::save($post_id, '_popup_cookie_expiry', $cookie_expiry);
+
+        $schedule_start = sanitize_text_field($_POST['_popup_schedule_start'] ?? '');
+        Popup_Fields::save($post_id, '_popup_schedule_start', $schedule_start);
+
+        $schedule_end = sanitize_text_field($_POST['_popup_schedule_end'] ?? '');
+        Popup_Fields::save($post_id, '_popup_schedule_end', $schedule_end);
     }
 
     /**
