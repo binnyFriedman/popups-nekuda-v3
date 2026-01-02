@@ -18,6 +18,15 @@ define('POPUP_VERSION', '3.0.0');
 define('POPUP_DIR', plugin_dir_path(__FILE__));
 define('POPUP_URL', plugin_dir_url(__FILE__));
 
+// Include classes
+require_once POPUP_DIR . 'includes/class-fields.php';
+require_once POPUP_DIR . 'includes/class-admin.php';
+
+// Initialize admin
+if (is_admin()) {
+    new Popup_Admin();
+}
+
 /**
  * Register Popup Custom Post Type
  */

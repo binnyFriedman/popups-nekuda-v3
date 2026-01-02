@@ -1,0 +1,42 @@
+// Popup Admin Styles
+
+.popup-field {
+  margin-bottom: 1em;
+
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="date"] {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+.popup-field--radio {
+  legend {
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  label {
+    display: block;
+    font-weight: normal;
+    margin-bottom: 4px;
+    cursor: pointer;
+  }
+}
+
+// Conditional visibility: hide timeout field when exit_intent is selected
+.popup-field--timeout {
+  transition: opacity 0.2s ease;
+}
+
+// JS will add this class to body when trigger type changes
+.popup-trigger--exit_intent .popup-field--timeout {
+  display: none;
+}
