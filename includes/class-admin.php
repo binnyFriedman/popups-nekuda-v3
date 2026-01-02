@@ -36,6 +36,15 @@ class Popup_Admin {
             'normal',
             'high'
         );
+
+        add_meta_box(
+            'popup_display_constraints',
+            __('Display Constraints', 'popups-nekuda'),
+            [$this, 'render_display_constraints'],
+            'popup',
+            'side',
+            'default'
+        );
     }
 
     /**
@@ -95,6 +104,24 @@ class Popup_Admin {
     }
 
     /**
+     * Render Display Constraints meta box
+     */
+    public function render_display_constraints(\WP_Post $post): void {
+        Popup_Fields::text($post->ID, '_popup_max_width', [
+            'label'   => __('Max Width (px)', 'popups-nekuda'),
+            'type'    => 'number',
+            'default' => '600',
+            'attrs'   => 'min="200" step="10"',
+        ]);
+
+        Popup_Fields::text($post->ID, '_popup_max_height', [
+            'label'   => __('Max Height (px or empty for auto)', 'popups-nekuda'),
+            'type'    => 'number',
+            'attrs'   => 'min="100" step="10" placeholder="auto"',
+        ]);
+    }
+
+    /**
      * Save meta fields
      */
     public function save_meta(int $post_id): void {
@@ -132,6 +159,13 @@ class Popup_Admin {
 
         $schedule_end = sanitize_text_field($_POST['_popup_schedule_end'] ?? '');
         Popup_Fields::save($post_id, '_popup_schedule_end', $schedule_end);
+
+        // Display constraints
+        $max_width = absint($_POST['_popup_max_width'] ?? 600);
+        Popup_Fields::save($post_id, '_popup_max_width', $max_width ?: 600);
+
+        $max_height = $_POST['_popup_max_height'] ?? '';
+        Popup_Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
     }
 
     /**
