@@ -55,6 +55,15 @@ class Popup_Admin {
             'normal',
             'default'
         );
+
+        add_meta_box(
+            'popup_slides_mobile',
+            __('Mobile Slides', 'popups-nekuda'),
+            [$this, 'render_slides_mobile'],
+            'popup',
+            'normal',
+            'default'
+        );
     }
 
     /**
@@ -136,6 +145,14 @@ class Popup_Admin {
      */
     public function render_slides_desktop(\WP_Post $post): void {
         $this->render_slides_repeater($post->ID, '_popup_slides_desktop', 'desktop');
+    }
+
+    /**
+     * Render Mobile Slides meta box
+     */
+    public function render_slides_mobile(\WP_Post $post): void {
+        echo '<p class="description">' . __('Leave empty to use desktop content on mobile.', 'popups-nekuda') . '</p>';
+        $this->render_slides_repeater($post->ID, '_popup_slides_mobile', 'mobile');
     }
 
     /**
@@ -256,17 +273,26 @@ class Popup_Admin {
         Popup_Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
 
         // Desktop slides
-        $slides_desktop = $_POST['_popup_slides_desktop'] ?? [];
-        if (is_array($slides_desktop)) {
-            $slides_desktop = array_values(array_filter(array_map(function($content) {
-                return wp_kses_post($content);
-            }, $slides_desktop), function($content) {
-                return !empty(trim(strip_tags($content)));
-            }));
-        } else {
-            $slides_desktop = [];
-        }
+        $slides_desktop = $this->sanitize_slides($_POST['_popup_slides_desktop'] ?? []);
         Popup_Fields::save($post_id, '_popup_slides_desktop', $slides_desktop);
+
+        // Mobile slides
+        $slides_mobile = $this->sanitize_slides($_POST['_popup_slides_mobile'] ?? []);
+        Popup_Fields::save($post_id, '_popup_slides_mobile', $slides_mobile);
+    }
+
+    /**
+     * Sanitize slides array
+     */
+    private function sanitize_slides(array $slides): array {
+        if (!is_array($slides)) {
+            return [];
+        }
+        return array_values(array_filter(array_map(function($content) {
+            return wp_kses_post($content);
+        }, $slides), function($content) {
+            return !empty(trim(strip_tags($content)));
+        }));
     }
 
     /**
