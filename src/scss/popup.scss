@@ -1,0 +1,163 @@
+// Popup Frontend Styles
+
+.popup {
+  display: none;
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  &.is-open {
+    display: block;
+  }
+}
+
+.popup__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+}
+
+.popup__container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: var(--popup-max-width, 600px);
+  max-height: var(--popup-max-height, 80vh);
+  width: 90%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.popup__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  &:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+  }
+}
+
+.popup__content {
+  overflow: auto;
+  max-height: var(--popup-max-height, 80vh);
+}
+
+// Desktop/Mobile visibility
+.popup__content--desktop {
+  display: block;
+}
+
+.popup__content--mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .popup__content--desktop {
+    display: none;
+  }
+
+  .popup__content--mobile {
+    display: block;
+  }
+
+  .popup__container {
+    width: 95%;
+  }
+}
+
+// Slides
+.popup__slides {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+
+.popup__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: none;
+
+  &.is-active {
+    display: block;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+// Navigation dots
+.popup__nav {
+  padding: 15px;
+  text-align: center;
+}
+
+.popup__dots {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.popup__dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #ccc;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #999;
+  }
+
+  &.is-active {
+    background: #333;
+  }
+
+  &:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+  }
+}
+
+// Screen reader only utility
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

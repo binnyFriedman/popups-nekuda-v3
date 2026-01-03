@@ -9,8 +9,34 @@ if (!defined('ABSPATH')) {
 
 class Popup_Frontend {
 
+    private bool $has_popups = false;
+
     public function __construct() {
+        add_action('wp_enqueue_scripts', [$this, 'maybe_enqueue_assets']);
         add_action('wp_footer', [$this, 'render_popups']);
+    }
+
+    /**
+     * Enqueue assets only if there are active popups
+     */
+    public function maybe_enqueue_assets(): void {
+        $popups = $this->get_active_popups();
+
+        if (empty($popups)) {
+            return;
+        }
+
+        $this->has_popups = true;
+
+        $css_file = POPUP_DIR . 'assets/css/popup.css';
+        if (file_exists($css_file)) {
+            wp_enqueue_style(
+                'popup-frontend',
+                POPUP_URL . 'assets/css/popup.css',
+                [],
+                POPUP_VERSION
+            );
+        }
     }
 
     /**

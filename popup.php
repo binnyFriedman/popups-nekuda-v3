@@ -25,9 +25,9 @@ require_once POPUP_DIR . 'includes/class-frontend.php';
 
 // Initialize
 if (is_admin()) {
-    new Popup_Admin();
+    $GLOBALS['popup_admin'] = new Popup_Admin();
 } else {
-    new Popup_Frontend();
+    $GLOBALS['popup_frontend'] = new Popup_Frontend();
 }
 
 /**
