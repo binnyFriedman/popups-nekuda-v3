@@ -67,11 +67,15 @@ declare const wp: any;
                                     editor.save();
                                 });
                             }
-                            initMediaButton(editorId);
                         }, 100);
 
                         updateSlideNumbers($list);
                         bindRemoveButton($newSlide);
+                        
+                        // Update mobile sync status when adding slides
+                        if (type === 'mobile') {
+                            updateMobileSyncStatus();
+                        }
                     }
                     $addBtn.prop('disabled', false).text('Add Slide');
                 }).fail(function() {
@@ -106,6 +110,12 @@ declare const wp: any;
             $slide.remove();
             updateSlideNumbers($list);
             reindexSlides($list);
+            
+            // Update mobile sync status when removing slides
+            const $repeater = $list.closest('.popup-slides-repeater');
+            if ($repeater.data('type') === 'mobile') {
+                updateMobileSyncStatus();
+            }
         });
     }
 
@@ -192,46 +202,6 @@ declare const wp: any;
         }
     }
 
-    function initMediaButton(editorId: string): void {
-        // Find the media button for this editor
-        const $wrap = $('#wp-' + editorId + '-wrap');
-        const $mediaButton = $wrap.find('.insert-media');
-        
-        if ($mediaButton.length && typeof wp !== 'undefined' && wp.media) {
-            $mediaButton.off('click').on('click', function(e: Event) {
-                e.preventDefault();
-                
-                // Set the active editor
-                (window as any).wpActiveEditor = editorId;
-                
-                // Open the media library
-                const mediaFrame = wp.media({
-                    title: 'Insert Media',
-                    button: { text: 'Insert' },
-                    multiple: false
-                });
-                
-                mediaFrame.on('select', function() {
-                    const attachment = mediaFrame.state().get('selection').first().toJSON();
-                    const editor = tinymce.get(editorId);
-                    
-                    if (editor) {
-                        let content = '';
-                        if (attachment.type === 'image') {
-                            content = '<img src="' + attachment.url + '" alt="' + (attachment.alt || '') + '" />';
-                        } else {
-                            content = '<a href="' + attachment.url + '">' + attachment.title + '</a>';
-                        }
-                        editor.insertContent(content);
-                        editor.save();
-                    }
-                });
-                
-                mediaFrame.open();
-            });
-        }
-    }
-
     // Sync TinyMCE content to textareas before form submit
     function syncTinyMCEOnSubmit(): void {
         // Hook into WordPress's pre-submit using mousedown (fires before click completes)
@@ -283,10 +253,91 @@ declare const wp: any;
         }
     }
 
+    /**
+     * Initialize tabbed content interface
+     */
+    function initTabs(): void {
+        const $tabsContainer = $('.popup-content-tabs');
+        if (!$tabsContainer.length) return;
+
+        const $tabBtns = $tabsContainer.find('.popup-tab-btn');
+        const $tabPanels = $tabsContainer.find('.popup-tab-panel');
+
+        $tabBtns.on('click', function(this: HTMLElement) {
+            const $btn = $(this);
+            const tabId = $btn.data('tab');
+
+            // Update active states
+            $tabBtns.removeClass('is-active');
+            $btn.addClass('is-active');
+
+            $tabPanels.removeClass('is-active');
+            $tabPanels.filter('[data-panel="' + tabId + '"]').addClass('is-active');
+
+            // Store preference in sessionStorage for this editing session
+            try {
+                sessionStorage.setItem('popup_active_tab', tabId);
+            } catch (e) {
+                // sessionStorage not available
+            }
+        });
+
+        // Restore last active tab from session
+        try {
+            const savedTab = sessionStorage.getItem('popup_active_tab');
+            if (savedTab) {
+                $tabBtns.filter('[data-tab="' + savedTab + '"]').trigger('click');
+            }
+        } catch (e) {
+            // sessionStorage not available
+        }
+    }
+
+    /**
+     * Update mobile tab sync indicator and notice based on content
+     */
+    function updateMobileSyncStatus(): void {
+        const $mobilePanel = $('.popup-tab-panel[data-panel="mobile"]');
+        const $mobileNotice = $mobilePanel.find('.popup-mobile-notice');
+        const $mobileTabBtn = $('.popup-tab-btn[data-tab="mobile"]');
+        const $syncIndicator = $mobileTabBtn.find('.popup-tab-sync');
+
+        // Check if mobile has any slides with content
+        let hasMobileContent = false;
+        $mobilePanel.find('.popup-slide-item').each(function(this: HTMLElement) {
+            const $textarea = $(this).find('textarea');
+            const editorId = $textarea.attr('id');
+            let content = $textarea.val() as string;
+
+            // Also check TinyMCE if available
+            if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
+                content = tinymce.get(editorId).getContent();
+            }
+
+            if (content && content.trim() !== '') {
+                hasMobileContent = true;
+                return false; // break
+            }
+        });
+
+        // Update UI based on content
+        if (hasMobileContent) {
+            $mobileNotice.addClass('is-hidden');
+            $syncIndicator.hide();
+        } else {
+            $mobileNotice.removeClass('is-hidden');
+            $syncIndicator.show();
+        }
+    }
+
     // Initialize on document ready
     $(document).ready(function() {
+        initTabs();
         initSlidesRepeater();
         syncTinyMCEOnSubmit();
+        
+        // Initial sync status check
+        setTimeout(updateMobileSyncStatus, 500);
         
         // Add change handlers to existing editors after they're initialized
         setTimeout(function() {
@@ -296,6 +347,10 @@ declare const wp: any;
                     if (editor && editor.id && editor.id.startsWith('popup_editor_')) {
                         editor.on('change keyup blur', function() {
                             editor.save();
+                            // Update sync status when mobile content changes
+                            if (editor.id.includes('mobile')) {
+                                updateMobileSyncStatus();
+                            }
                         });
                     }
                 }

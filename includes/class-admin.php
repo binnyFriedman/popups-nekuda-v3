@@ -60,18 +60,9 @@ class Admin {
         );
 
         add_meta_box(
-            'popup_slides_desktop',
-            __('Desktop Slides', PLUGIN_NAMESPACE),
-            [$this, 'render_slides_desktop'],
-            'popup',
-            'normal',
-            'default'
-        );
-
-        add_meta_box(
-            'popup_slides_mobile',
-            __('Mobile Slides', PLUGIN_NAMESPACE),
-            [$this, 'render_slides_mobile'],
+            'popup_content',
+            __('Popup Content', PLUGIN_NAMESPACE),
+            [$this, 'render_popup_content'],
             'popup',
             'normal',
             'default'
@@ -170,18 +161,43 @@ class Admin {
     }
 
     /**
-     * Render Desktop Slides meta box
+     * Render unified Popup Content meta box with tabs
      */
-    public function render_slides_desktop(\WP_Post $post): void {
-        $this->render_slides_repeater($post->ID, '_popup_slides_desktop', 'desktop');
-    }
-
-    /**
-     * Render Mobile Slides meta box
-     */
-    public function render_slides_mobile(\WP_Post $post): void {
-        echo '<p class="description">' . __('Leave empty to use desktop content on mobile.', PLUGIN_NAMESPACE) . '</p>';
-        $this->render_slides_repeater($post->ID, '_popup_slides_mobile', 'mobile');
+    public function render_popup_content(\WP_Post $post): void {
+        $mobile_slides = Fields::get($post->ID, '_popup_slides_mobile', []);
+        $has_mobile_content = !empty($mobile_slides) && is_array($mobile_slides);
+        
+        ?>
+        <div class="popup-content-tabs">
+            <div class="popup-tabs-nav">
+                <button type="button" class="popup-tab-btn is-active" data-tab="desktop">
+                    <span class="dashicons dashicons-desktop"></span>
+                    <?php _e('Desktop', PLUGIN_NAMESPACE); ?>
+                </button>
+                <button type="button" class="popup-tab-btn" data-tab="mobile">
+                    <span class="dashicons dashicons-smartphone"></span>
+                    <?php _e('Mobile', PLUGIN_NAMESPACE); ?>
+                    <?php if (!$has_mobile_content): ?>
+                        <span class="popup-tab-sync" title="<?php esc_attr_e('Using desktop content', PLUGIN_NAMESPACE); ?>">↔</span>
+                    <?php endif; ?>
+                </button>
+            </div>
+            
+            <div class="popup-tabs-content">
+                <div class="popup-tab-panel is-active" data-panel="desktop">
+                    <?php $this->render_slides_repeater($post->ID, '_popup_slides_desktop', 'desktop'); ?>
+                </div>
+                
+                <div class="popup-tab-panel" data-panel="mobile">
+                    <div class="popup-mobile-notice <?php echo $has_mobile_content ? 'is-hidden' : ''; ?>">
+                        <span class="dashicons dashicons-info"></span>
+                        <p><?php _e('Currently using desktop slides on mobile. Add slides below to customize the mobile experience.', PLUGIN_NAMESPACE); ?></p>
+                    </div>
+                    <?php $this->render_slides_repeater($post->ID, '_popup_slides_mobile', 'mobile'); ?>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     /**

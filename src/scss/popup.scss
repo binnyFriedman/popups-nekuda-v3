@@ -150,6 +150,16 @@ body.popup-open {
   flex: 1;
   min-height: 0; // Allow flex child to shrink below content size
   
+  // CSS Reset - prevent theme styles from bleeding in
+  p, h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+  }
+  
+  // Ensure no trailing gap from last element
+  .popup__slide > *:last-child {
+    margin-bottom: 0;
+  }
+  
   img {
     max-width: 100%;
     height: auto;
