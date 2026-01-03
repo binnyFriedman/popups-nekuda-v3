@@ -150,6 +150,11 @@ body.popup-open {
   flex: 1;
   min-height: 0; // Allow flex child to shrink below content size
   
+  // Hide scrollbar during slide transitions to prevent flashing
+  &:has(.is-leaving) {
+    overflow-y: hidden;
+  }
+  
   // CSS Reset - prevent theme styles from bleeding in
   p, h1, h2, h3, h4, h5, h6 {
     margin: 0;
@@ -261,19 +266,44 @@ body.popup-open {
   }
 }
 
-// Slides
+// Slides - Crossfade transition (RTL-agnostic)
+// Both slides visible during transition for smooth height interpolation
 .popup__slides {
-  display: flex;
-  transition: transform 0.3s ease;
+  position: relative;
+  width: 100%;
+  // Height set by the active slide (position: relative)
 }
 
 .popup__slide {
-  flex: 0 0 100%;
-  min-width: 0;
-  display: none;
-
+  // Stack all slides on top of each other
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  
+  // Hidden by default - height: 0 ensures inactive slides don't affect container
+  opacity: 0;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  
+  // Active slide - fades in and sets container height
   &.is-active {
-    display: block;
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    height: auto;
+    overflow: visible;
+  }
+  
+  // Leaving slide - fades out while overlaying (crossfade effect)
+  &.is-leaving {
+    position: absolute;
+    opacity: 0;
+    visibility: visible; // Stay visible during fade-out
+    height: auto; // Needs height during crossfade transition
+    overflow: visible;
   }
 }
 
