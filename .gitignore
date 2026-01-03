@@ -10,5 +10,5 @@ assets/css/*.css.map
 assets/js/*.js
 assets/js/*.js.map
 
-# Vendor libraries are tracked for distribution
-# vendor/
+# Vendor libraries (installed via composer)
+vendor/
