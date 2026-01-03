@@ -1,5 +1,11 @@
 import { setCookie, getCookie, trapFocus } from './utils';
 
+// Localized settings from WordPress
+interface PopupSettings {
+    devMode: boolean;
+}
+declare const popupSettings: PopupSettings | undefined;
+
 interface PopupElement extends HTMLElement {
     dataset: {
         popupId: string;
@@ -24,8 +30,8 @@ const AUTO_ADVANCE_DELAY = 5000;
 const TRANSITION_DURATION = 400; // Must match CSS transition duration (0.4s)
 const popupStates = new Map<string, PopupState>();
 
-// Dev mode: skip cookie checks for debugging (set to false for production)
-const DEV_MODE = false;
+// Dev mode: skip cookie checks for debugging (controlled via WP_DEBUG)
+const DEV_MODE = popupSettings?.devMode ?? false;
 
 /**
  * Initialize all popups on DOM ready
@@ -264,14 +270,8 @@ function startAutoAdvance(popup: PopupElement): void {
     if (!state || state.autoAdvanceInterval || state.isPaused) return;
 
     // Get the currently visible content (desktop or mobile)
-    const contents = popup.querySelectorAll<HTMLElement>('.popup__content');
-    let activeContent: HTMLElement | null = null;
-
-    contents.forEach((content) => {
-        if (content.offsetParent !== null) {
-            activeContent = content;
-        }
-    });
+    const contents = Array.from(popup.querySelectorAll<HTMLElement>('.popup__content'));
+    const activeContent = contents.find((content) => content.offsetParent !== null);
 
     if (!activeContent) return;
 
@@ -279,9 +279,9 @@ function startAutoAdvance(popup: PopupElement): void {
     if (slides.length <= 1) return;
 
     state.autoAdvanceInterval = window.setInterval(() => {
-        const currentIndex = getCurrentSlideIndex(activeContent!);
+        const currentIndex = getCurrentSlideIndex(activeContent);
         const nextIndex = (currentIndex + 1) % slides.length;
-        goToSlide(popup, activeContent!, nextIndex);
+        goToSlide(popup, activeContent, nextIndex);
     }, AUTO_ADVANCE_DELAY);
 }
 
