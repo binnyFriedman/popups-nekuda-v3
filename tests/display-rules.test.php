@@ -132,4 +132,28 @@ describe('Invalid Rules', function () {
     t('empty string ignored', fn () => !passes([''], [], singular('page', 42)));
 });
 
+describe('Rule Helpers', function () {
+    t('make_rule creates special:home', fn () =>
+        DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_HOME) === 'special:home');
+
+    t('make_rule creates post:42', fn () =>
+        DisplayRules::make_rule(DisplayRules::PREFIX_POST, 42) === 'post:42');
+
+    t('make_rule creates post_type:product', fn () =>
+        DisplayRules::make_rule(DisplayRules::PREFIX_POST_TYPE, 'product') === 'post_type:product');
+
+    t('make_rule creates term:category:5', fn () =>
+        DisplayRules::make_rule(DisplayRules::PREFIX_TERM, 'category', 5) === 'term:category:5');
+
+    t('parse_rule extracts prefix and parts from special:home', function () {
+        $parsed = DisplayRules::parse_rule('special:home');
+        return $parsed['prefix'] === DisplayRules::PREFIX_SPECIAL && $parsed['parts'] === [DisplayRules::SPECIAL_HOME];
+    });
+
+    t('parse_rule extracts prefix and parts from term:category:5', function () {
+        $parsed = DisplayRules::parse_rule('term:category:5');
+        return $parsed['prefix'] === DisplayRules::PREFIX_TERM && $parsed['parts'] === ['category', '5'];
+    });
+});
+
 });

@@ -14,6 +14,16 @@ if (!defined('ABSPATH')) {
 
 class DisplayRules {
 
+    // Rule prefixes
+    public const PREFIX_SPECIAL   = 'special';
+    public const PREFIX_POST      = 'post';
+    public const PREFIX_POST_TYPE = 'post_type';
+    public const PREFIX_TERM      = 'term';
+
+    // Special page identifiers
+    public const SPECIAL_HOME = 'home';
+    public const SPECIAL_BLOG = 'blog';
+
     /**
      * Check if rules pass for given context
      * 
@@ -53,6 +63,31 @@ class DisplayRules {
     }
 
     /**
+     * Build a rule string from prefix and value(s)
+     * 
+     * @param string $prefix Rule prefix constant (POPUP_RULE_*)
+     * @param string|int ...$parts Additional parts (e.g., taxonomy, term_id)
+     * @return string
+     */
+    public static function make_rule(string $prefix, ...$parts): string {
+        return $prefix . ':' . implode(':', $parts);
+    }
+
+    /**
+     * Parse a rule string into prefix and parts
+     * 
+     * @param string $rule Rule string
+     * @return array{prefix: string, parts: array}
+     */
+    public static function parse_rule(string $rule): array {
+        $segments = explode(':', $rule);
+        return [
+            'prefix' => $segments[0] ?? '',
+            'parts'  => array_slice($segments, 1),
+        ];
+    }
+
+    /**
      * Check if a single rule matches the context
      * 
      * Rule formats:
@@ -67,36 +102,42 @@ class DisplayRules {
      * @return bool
      */
     public static function matches_rule(string $rule, array $context): bool {
-        // Special pages
-        if ($rule === 'special:home') {
-            return !empty($context['is_front_page']);
-        }
+        $parsed = self::parse_rule($rule);
+        $prefix = $parsed['prefix'];
+        $parts = $parsed['parts'];
 
-        if ($rule === 'special:blog') {
-            return !empty($context['is_home']);
+        // Special pages
+        if ($prefix === self::PREFIX_SPECIAL) {
+            $page = $parts[0] ?? '';
+            if ($page === self::SPECIAL_HOME) {
+                return !empty($context['is_front_page']);
+            }
+            if ($page === self::SPECIAL_BLOG) {
+                return !empty($context['is_home']);
+            }
+            return false;
         }
 
         // Specific post by ID
-        if (str_starts_with($rule, 'post:')) {
-            $id = (int) substr($rule, 5);
+        if ($prefix === self::PREFIX_POST) {
+            $id = (int) ($parts[0] ?? 0);
             return isset($context['post_id']) && $context['post_id'] === $id;
         }
 
         // Post type
-        if (str_starts_with($rule, 'post_type:')) {
-            $type = substr($rule, 10);
+        if ($prefix === self::PREFIX_POST_TYPE) {
+            $type = $parts[0] ?? '';
             return isset($context['post_type']) && $context['post_type'] === $type;
         }
 
         // Taxonomy term (format: term:taxonomy:term_id)
-        if (str_starts_with($rule, 'term:')) {
-            $parts = explode(':', $rule);
-            if (count($parts) !== 3) {
+        if ($prefix === self::PREFIX_TERM) {
+            if (count($parts) !== 2) {
                 return false;
             }
 
-            $taxonomy = $parts[1];
-            $term_id = (int) $parts[2];
+            $taxonomy = $parts[0];
+            $term_id = (int) $parts[1];
 
             if (!isset($context['terms'][$taxonomy])) {
                 return false;
@@ -110,7 +151,6 @@ class DisplayRules {
 
     /**
      * Build context array from current WordPress query
-     * 
      * @return array Context array for rule matching
      */
     public static function build_context(): array {
@@ -139,4 +179,3 @@ class DisplayRules {
         return $context;
     }
 }
-

@@ -84,7 +84,7 @@ class Fields {
 
         $label = $args['label'] ?? '';
         $description = $args['description'] ?? '';
-        $placeholder = $args['placeholder'] ?? __('Search...', 'popups-nekuda');
+        $placeholder = $args['placeholder'] ?? __('Search...', PLUGIN_NAMESPACE);
 
         echo '<div class="popup-field popup-field--select2">';
         
@@ -116,43 +116,49 @@ class Fields {
      * @return string Human-readable label
      */
     public static function get_rule_label(string $value): string {
-        // Special pages
-        if ($value === 'special:home') {
-            return __('Homepage', 'popups-nekuda');
-        }
+        $parsed = DisplayRules::parse_rule($value);
+        $prefix = $parsed['prefix'];
+        $parts = $parsed['parts'];
 
-        if ($value === 'special:blog') {
-            return __('Blog Page', 'popups-nekuda');
+        // Special pages
+        if ($prefix === DisplayRules::PREFIX_SPECIAL) {
+            $page = $parts[0] ?? '';
+            if ($page === DisplayRules::SPECIAL_HOME) {
+                return __('Homepage', PLUGIN_NAMESPACE);
+            }
+            if ($page === DisplayRules::SPECIAL_BLOG) {
+                return __('Blog Page', PLUGIN_NAMESPACE);
+            }
+            return $value;
         }
 
         // Post type
-        if (str_starts_with($value, 'post_type:')) {
-            $type = substr($value, 10);
+        if ($prefix === DisplayRules::PREFIX_POST_TYPE) {
+            $type = $parts[0] ?? '';
             $post_type_obj = get_post_type_object($type);
             if ($post_type_obj) {
-                return sprintf(__('All %s', 'popups-nekuda'), $post_type_obj->labels->name);
+                return sprintf(__('All %s', PLUGIN_NAMESPACE), $post_type_obj->labels->name);
             }
             return $value;
         }
 
         // Specific post
-        if (str_starts_with($value, 'post:')) {
-            $id = (int) substr($value, 5);
+        if ($prefix === DisplayRules::PREFIX_POST) {
+            $id = (int) ($parts[0] ?? 0);
             $post = get_post($id);
             if ($post) {
                 $type_obj = get_post_type_object($post->post_type);
                 $type_label = $type_obj ? $type_obj->labels->singular_name : $post->post_type;
                 return sprintf('%s (%s)', $post->post_title, $type_label);
             }
-            return sprintf(__('Post #%d', 'popups-nekuda'), $id);
+            return sprintf(__('Post #%d', PLUGIN_NAMESPACE), $id);
         }
 
         // Taxonomy term
-        if (str_starts_with($value, 'term:')) {
-            $parts = explode(':', $value);
-            if (count($parts) === 3) {
-                $taxonomy = $parts[1];
-                $term_id = (int) $parts[2];
+        if ($prefix === DisplayRules::PREFIX_TERM) {
+            if (count($parts) === 2) {
+                $taxonomy = $parts[0];
+                $term_id = (int) $parts[1];
                 $term = get_term($term_id, $taxonomy);
                 if ($term && !is_wp_error($term)) {
                     $tax_obj = get_taxonomy($taxonomy);

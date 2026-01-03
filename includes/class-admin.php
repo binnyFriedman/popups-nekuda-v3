@@ -25,7 +25,7 @@ class Admin {
     public function register_meta_boxes(): void {
         add_meta_box(
             'popup_trigger_settings',
-            __('Trigger Settings', 'popups-nekuda'),
+            __('Trigger Settings', PLUGIN_NAMESPACE),
             [$this, 'render_trigger_settings'],
             'popup',
             'normal',
@@ -34,7 +34,7 @@ class Admin {
 
         add_meta_box(
             'popup_cookie_scheduling',
-            __('Cookie & Scheduling', 'popups-nekuda'),
+            __('Cookie & Scheduling', PLUGIN_NAMESPACE),
             [$this, 'render_cookie_scheduling'],
             'popup',
             'normal',
@@ -43,7 +43,7 @@ class Admin {
 
         add_meta_box(
             'popup_display_constraints',
-            __('Display Constraints', 'popups-nekuda'),
+            __('Display Constraints', PLUGIN_NAMESPACE),
             [$this, 'render_display_constraints'],
             'popup',
             'side',
@@ -52,7 +52,7 @@ class Admin {
 
         add_meta_box(
             'popup_display_rules',
-            __('Display Rules', 'popups-nekuda'),
+            __('Display Rules', PLUGIN_NAMESPACE),
             [$this, 'render_display_rules'],
             'popup',
             'side',
@@ -61,7 +61,7 @@ class Admin {
 
         add_meta_box(
             'popup_slides_desktop',
-            __('Desktop Slides', 'popups-nekuda'),
+            __('Desktop Slides', PLUGIN_NAMESPACE),
             [$this, 'render_slides_desktop'],
             'popup',
             'normal',
@@ -70,7 +70,7 @@ class Admin {
 
         add_meta_box(
             'popup_slides_mobile',
-            __('Mobile Slides', 'popups-nekuda'),
+            __('Mobile Slides', PLUGIN_NAMESPACE),
             [$this, 'render_slides_mobile'],
             'popup',
             'normal',
@@ -85,15 +85,15 @@ class Admin {
         wp_nonce_field('popup_save_meta', 'popup_meta_nonce');
 
         Fields::radio($post->ID, '_popup_trigger_type', [
-            'exit_intent' => __('Exit Intent', 'popups-nekuda'),
-            'timeout'     => __('Timeout', 'popups-nekuda'),
+            'exit_intent' => __('Exit Intent', PLUGIN_NAMESPACE),
+            'timeout'     => __('Timeout', PLUGIN_NAMESPACE),
         ], [
-            'label'   => __('Trigger Type', 'popups-nekuda'),
+            'label'   => __('Trigger Type', PLUGIN_NAMESPACE),
             'default' => 'timeout',
         ]);
 
         Fields::text($post->ID, '_popup_trigger_timeout', [
-            'label'   => __('Timeout (seconds)', 'popups-nekuda'),
+            'label'   => __('Timeout (seconds)', PLUGIN_NAMESPACE),
             'type'    => 'number',
             'default' => '3',
             'class'   => 'popup-field--timeout',
@@ -111,25 +111,25 @@ class Admin {
         }
 
         Fields::text($post->ID, '_popup_cookie_key', [
-            'label'   => __('Cookie Key', 'popups-nekuda'),
+            'label'   => __('Cookie Key', PLUGIN_NAMESPACE),
             'default' => $cookie_key,
             'attrs'   => 'placeholder="auto-generated-from-slug"',
         ]);
 
         Fields::text($post->ID, '_popup_cookie_expiry', [
-            'label'   => __('Cookie Expiry (days)', 'popups-nekuda'),
+            'label'   => __('Cookie Expiry (days)', PLUGIN_NAMESPACE),
             'type'    => 'number',
             'default' => '30',
             'attrs'   => 'min="1" step="1"',
         ]);
 
         Fields::text($post->ID, '_popup_schedule_start', [
-            'label' => __('Schedule Start Date (optional)', 'popups-nekuda'),
+            'label' => __('Schedule Start Date (optional)', PLUGIN_NAMESPACE),
             'type'  => 'date',
         ]);
 
         Fields::text($post->ID, '_popup_schedule_end', [
-            'label' => __('Schedule End Date (optional)', 'popups-nekuda'),
+            'label' => __('Schedule End Date (optional)', PLUGIN_NAMESPACE),
             'type'  => 'date',
         ]);
     }
@@ -139,14 +139,14 @@ class Admin {
      */
     public function render_display_constraints(\WP_Post $post): void {
         Fields::text($post->ID, '_popup_max_width', [
-            'label'   => __('Max Width (px)', 'popups-nekuda'),
+            'label'   => __('Max Width (px)', PLUGIN_NAMESPACE),
             'type'    => 'number',
             'default' => '600',
             'attrs'   => 'min="200" step="10"',
         ]);
 
         Fields::text($post->ID, '_popup_max_height', [
-            'label'   => __('Max Height (px or empty for auto)', 'popups-nekuda'),
+            'label'   => __('Max Height (px or empty for auto)', PLUGIN_NAMESPACE),
             'type'    => 'number',
             'attrs'   => 'min="100" step="10" placeholder="auto"',
         ]);
@@ -157,15 +157,15 @@ class Admin {
      */
     public function render_display_rules(\WP_Post $post): void {
         Fields::select2_multi($post->ID, '_popup_include', [
-            'label'       => __('Include', 'popups-nekuda'),
-            'description' => __('Leave empty to show on all pages', 'popups-nekuda'),
-            'placeholder' => __('Search pages, posts, categories...', 'popups-nekuda'),
+            'label'       => __('Include', PLUGIN_NAMESPACE),
+            'description' => __('Leave empty to show on all pages', PLUGIN_NAMESPACE),
+            'placeholder' => __('Search pages, posts, categories...', PLUGIN_NAMESPACE),
         ]);
 
         Fields::select2_multi($post->ID, '_popup_exclude', [
-            'label'       => __('Exclude', 'popups-nekuda'),
-            'description' => __('Hide popup on these pages', 'popups-nekuda'),
-            'placeholder' => __('Search pages, posts, categories...', 'popups-nekuda'),
+            'label'       => __('Exclude', PLUGIN_NAMESPACE),
+            'description' => __('Hide popup on these pages', PLUGIN_NAMESPACE),
+            'placeholder' => __('Search pages, posts, categories...', PLUGIN_NAMESPACE),
         ]);
     }
 
@@ -180,7 +180,7 @@ class Admin {
      * Render Mobile Slides meta box
      */
     public function render_slides_mobile(\WP_Post $post): void {
-        echo '<p class="description">' . __('Leave empty to use desktop content on mobile.', 'popups-nekuda') . '</p>';
+        echo '<p class="description">' . __('Leave empty to use desktop content on mobile.', PLUGIN_NAMESPACE) . '</p>';
         $this->render_slides_repeater($post->ID, '_popup_slides_mobile', 'mobile');
     }
 
@@ -205,7 +205,7 @@ class Admin {
         }
 
         echo '</div>';
-        echo '<button type="button" class="button popup-add-slide">' . __('Add Slide', 'popups-nekuda') . '</button>';
+        echo '<button type="button" class="button popup-add-slide">' . __('Add Slide', PLUGIN_NAMESPACE) . '</button>';
         echo '</div>';
     }
 
@@ -219,8 +219,8 @@ class Admin {
 
         echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
         echo '<div class="popup-slide-header">';
-        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', 'popups-nekuda'), $index + 1) . '</span>';
-        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', 'popups-nekuda') . '</button>';
+        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', PLUGIN_NAMESPACE), $index + 1) . '</span>';
+        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', PLUGIN_NAMESPACE) . '</button>';
         echo '</div>';
         echo '<div class="popup-slide-content">';
 
@@ -256,8 +256,8 @@ class Admin {
         ob_start();
         echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
         echo '<div class="popup-slide-header">';
-        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', 'popups-nekuda'), $index + 1) . '</span>';
-        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', 'popups-nekuda') . '</button>';
+        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', PLUGIN_NAMESPACE), $index + 1) . '</span>';
+        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', PLUGIN_NAMESPACE) . '</button>';
         echo '</div>';
         echo '<div class="popup-slide-content">';
 
@@ -290,75 +290,95 @@ class Admin {
     /**
      * AJAX handler for Select2 content search
      * 
-     * Returns posts, pages, CPTs, and taxonomy terms matching the search query
+     * Returns grouped results (ACF-style) for better organization:
+     * - Special (Homepage, Blog)
+     * - Post Types (All Pages, All Posts, etc.)
+     * - Specific posts grouped by type
+     * - Taxonomy terms grouped by taxonomy
      */
     public function ajax_search_content(): void {
         check_ajax_referer('popup_admin_nonce', 'nonce');
 
         $search = sanitize_text_field($_GET['q'] ?? '');
-        $results = [];
+        $groups = [];
 
-        // Add special options (always show at top when no search or matching)
+        // Group: Special Pages
+        $special_children = [];
         if (empty($search) || stripos('homepage', $search) !== false || stripos('home', $search) !== false) {
-            $results[] = [
-                'id'   => 'special:home',
-                'text' => __('Homepage', 'popups-nekuda'),
-                'type' => __('Special', 'popups-nekuda'),
+            $special_children[] = [
+                'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_HOME),
+                'text' => __('Homepage', PLUGIN_NAMESPACE),
             ];
         }
-
         if (empty($search) || stripos('blog', $search) !== false) {
-            $results[] = [
-                'id'   => 'special:blog',
-                'text' => __('Blog Page', 'popups-nekuda'),
-                'type' => __('Special', 'popups-nekuda'),
+            $special_children[] = [
+                'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_BLOG),
+                'text' => __('Blog Page', PLUGIN_NAMESPACE),
+            ];
+        }
+        if (!empty($special_children)) {
+            $groups[] = [
+                'text'     => __('Special', PLUGIN_NAMESPACE),
+                'children' => $special_children,
             ];
         }
 
-        // Add post types (when no search or searching for type names)
+        // Group: Post Types ("All X")
         $post_types = get_post_types(['public' => true], 'objects');
+        $type_children = [];
         foreach ($post_types as $post_type) {
             if ($post_type->name === 'attachment') {
                 continue;
             }
 
             $type_name = $post_type->labels->name;
-            if (empty($search) || stripos($type_name, $search) !== false || stripos('all ' . $type_name, $search) !== false) {
-                $results[] = [
-                    'id'   => 'post_type:' . $post_type->name,
-                    'text' => sprintf(__('All %s', 'popups-nekuda'), $type_name),
-                    'type' => __('Post Type', 'popups-nekuda'),
+            if (empty($search) || stripos($type_name, $search) !== false || stripos('all', $search) !== false) {
+                $type_children[] = [
+                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST_TYPE, $post_type->name),
+                    'text' => sprintf(__('All %s', PLUGIN_NAMESPACE), $type_name),
                 ];
             }
         }
+        if (!empty($type_children)) {
+            $groups[] = [
+                'text'     => __('Post Types', PLUGIN_NAMESPACE),
+                'children' => $type_children,
+            ];
+        }
 
-        // Search posts/pages
+        // Groups: Specific Posts (grouped by post type)
         if (!empty($search)) {
             $posts = get_posts([
                 'post_type'      => array_keys($post_types),
                 'post_status'    => 'publish',
                 's'              => $search,
-                'posts_per_page' => 20,
+                'posts_per_page' => 30,
                 'orderby'        => 'relevance',
             ]);
 
+            // Group posts by their type
+            $posts_by_type = [];
             foreach ($posts as $post) {
                 if ($post->post_type === 'attachment') {
                     continue;
                 }
-
-                $type_obj = get_post_type_object($post->post_type);
-                $type_label = $type_obj ? $type_obj->labels->singular_name : $post->post_type;
-
-                $results[] = [
-                    'id'   => 'post:' . $post->ID,
+                $posts_by_type[$post->post_type][] = [
+                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST, $post->ID),
                     'text' => $post->post_title,
-                    'type' => $type_label,
+                ];
+            }
+
+            foreach ($posts_by_type as $type => $items) {
+                $type_obj = get_post_type_object($type);
+                $label = $type_obj ? $type_obj->labels->name : ucfirst($type);
+                $groups[] = [
+                    'text'     => $label,
+                    'children' => $items,
                 ];
             }
         }
 
-        // Search taxonomy terms
+        // Groups: Taxonomy Terms (grouped by taxonomy)
         $taxonomies = get_taxonomies(['public' => true], 'objects');
         foreach ($taxonomies as $taxonomy) {
             $terms = get_terms([
@@ -368,20 +388,27 @@ class Admin {
                 'hide_empty' => false,
             ]);
 
-            if (is_wp_error($terms)) {
+            if (is_wp_error($terms) || empty($terms)) {
                 continue;
             }
 
+            $term_children = [];
             foreach ($terms as $term) {
-                $results[] = [
-                    'id'   => 'term:' . $taxonomy->name . ':' . $term->term_id,
+                $term_children[] = [
+                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_TERM, $taxonomy->name, $term->term_id),
                     'text' => $term->name,
-                    'type' => $taxonomy->labels->singular_name,
+                ];
+            }
+
+            if (!empty($term_children)) {
+                $groups[] = [
+                    'text'     => $taxonomy->labels->name,
+                    'children' => $term_children,
                 ];
             }
         }
 
-        wp_send_json(['results' => $results]);
+        wp_send_json(['results' => $groups]);
     }
 
     /**
@@ -497,7 +524,12 @@ class Admin {
         }
 
         $sanitized = [];
-        $valid_prefixes = ['special:', 'post:', 'post_type:', 'term:'];
+        $valid_prefixes = [
+            DisplayRules::PREFIX_SPECIAL . ':',
+            DisplayRules::PREFIX_POST . ':',
+            DisplayRules::PREFIX_POST_TYPE . ':',
+            DisplayRules::PREFIX_TERM . ':',
+        ];
 
         foreach ($rules as $rule) {
             if (!is_string($rule) || empty($rule)) {
@@ -609,6 +641,8 @@ JS;
 
     /**
      * Get inline script for Select2 initialization
+     * 
+     * Results are grouped (ACF-style) with optgroups for better organization
      */
     private function get_select2_init_script(): string {
         return <<<'JS'
@@ -636,24 +670,7 @@ JS;
                 },
                 placeholder: $select.data('placeholder') || 'Search...',
                 allowClear: true,
-                minimumInputLength: 0,
-                templateResult: function(item) {
-                    if (item.loading) {
-                        return item.text;
-                    }
-                    
-                    var $container = $('<div class="popup-select2-result"></div>');
-                    $container.append('<span class="popup-select2-result__text">' + item.text + '</span>');
-                    
-                    if (item.type) {
-                        $container.append('<span class="popup-select2-result__type">' + item.type + '</span>');
-                    }
-                    
-                    return $container;
-                },
-                templateSelection: function(item) {
-                    return item.text;
-                }
+                minimumInputLength: 0
             });
         });
     });

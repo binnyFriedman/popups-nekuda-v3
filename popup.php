@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 define('POPUP_VERSION', '3.0.0');
 define('POPUP_DIR', plugin_dir_path(__FILE__));
 define('POPUP_URL', plugin_dir_url(__FILE__));
+define('PLUGIN_NAMESPACE', 'PopupsNekuda');
 
 // Autoloader for PopupsNekuda namespace
 spl_autoload_register(function (string $class): void {
@@ -49,17 +50,17 @@ if (is_admin()) {
  */
 function popup_register_post_type(): void {
     $labels = [
-        'name'               => __('Popups', 'popups-nekuda'),
-        'singular_name'      => __('Popup', 'popups-nekuda'),
-        'add_new'            => __('Add New', 'popups-nekuda'),
-        'add_new_item'       => __('Add New Popup', 'popups-nekuda'),
-        'edit_item'          => __('Edit Popup', 'popups-nekuda'),
-        'new_item'           => __('New Popup', 'popups-nekuda'),
-        'view_item'          => __('View Popup', 'popups-nekuda'),
-        'search_items'       => __('Search Popups', 'popups-nekuda'),
-        'not_found'          => __('No popups found', 'popups-nekuda'),
-        'not_found_in_trash' => __('No popups found in Trash', 'popups-nekuda'),
-        'menu_name'          => __('Popups', 'popups-nekuda'),
+        'name'               => __('Popups', PLUGIN_NAMESPACE),
+        'singular_name'      => __('Popup', PLUGIN_NAMESPACE),
+        'add_new'            => __('Add New', PLUGIN_NAMESPACE),
+        'add_new_item'       => __('Add New Popup', PLUGIN_NAMESPACE),
+        'edit_item'          => __('Edit Popup', PLUGIN_NAMESPACE),
+        'new_item'           => __('New Popup', PLUGIN_NAMESPACE),
+        'view_item'          => __('View Popup', PLUGIN_NAMESPACE),
+        'search_items'       => __('Search Popups', PLUGIN_NAMESPACE),
+        'not_found'          => __('No popups found', PLUGIN_NAMESPACE),
+        'not_found_in_trash' => __('No popups found in Trash', PLUGIN_NAMESPACE),
+        'menu_name'          => __('Popups', PLUGIN_NAMESPACE),
     ];
 
     $args = [
