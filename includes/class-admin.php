@@ -13,6 +13,7 @@ class Popup_Admin {
         add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
         add_action('save_post_popup', [$this, 'save_meta']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
+        add_action('wp_ajax_popup_get_editor', [$this, 'ajax_get_editor']);
     }
 
     /**
@@ -43,6 +44,15 @@ class Popup_Admin {
             [$this, 'render_display_constraints'],
             'popup',
             'side',
+            'default'
+        );
+
+        add_meta_box(
+            'popup_slides_desktop',
+            __('Desktop Slides', 'popups-nekuda'),
+            [$this, 'render_slides_desktop'],
+            'popup',
+            'normal',
             'default'
         );
     }
@@ -122,6 +132,84 @@ class Popup_Admin {
     }
 
     /**
+     * Render Desktop Slides meta box
+     */
+    public function render_slides_desktop(\WP_Post $post): void {
+        $this->render_slides_repeater($post->ID, '_popup_slides_desktop', 'desktop');
+    }
+
+    /**
+     * Render slides repeater UI
+     */
+    private function render_slides_repeater(int $post_id, string $key, string $type): void {
+        $slides = Popup_Fields::get($post_id, $key, []);
+        if (!is_array($slides)) {
+            $slides = [];
+        }
+
+        echo '<div class="popup-slides-repeater" data-type="' . esc_attr($type) . '">';
+        echo '<div class="popup-slides-list">';
+
+        if (empty($slides)) {
+            $this->render_single_slide($key, 0, '');
+        } else {
+            foreach ($slides as $index => $content) {
+                $this->render_single_slide($key, $index, $content);
+            }
+        }
+
+        echo '</div>';
+        echo '<button type="button" class="button popup-add-slide">' . __('Add Slide', 'popups-nekuda') . '</button>';
+        echo '</div>';
+    }
+
+    /**
+     * Render a single slide with wp_editor
+     */
+    private function render_single_slide(string $key, int $index, string $content): void {
+        $editor_id = $key . '_' . $index;
+        $field_name = $key . '[' . $index . ']';
+
+        echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
+        echo '<div class="popup-slide-header">';
+        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', 'popups-nekuda'), $index + 1) . '</span>';
+        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', 'popups-nekuda') . '</button>';
+        echo '</div>';
+        echo '<div class="popup-slide-content">';
+
+        wp_editor($content, $editor_id, [
+            'textarea_name' => $field_name,
+            'textarea_rows' => 10,
+            'media_buttons' => true,
+            'teeny'         => false,
+            'quicktags'     => true,
+        ]);
+
+        echo '</div>';
+        echo '</div>';
+    }
+
+    /**
+     * AJAX handler to get a new wp_editor instance
+     */
+    public function ajax_get_editor(): void {
+        check_ajax_referer('popup_admin_nonce', 'nonce');
+
+        $key = sanitize_text_field($_POST['key'] ?? '');
+        $index = absint($_POST['index'] ?? 0);
+
+        if (empty($key)) {
+            wp_send_json_error('Invalid key');
+        }
+
+        ob_start();
+        $this->render_single_slide($key, $index, '');
+        $html = ob_get_clean();
+
+        wp_send_json_success(['html' => $html]);
+    }
+
+    /**
      * Save meta fields
      */
     public function save_meta(int $post_id): void {
@@ -166,6 +254,19 @@ class Popup_Admin {
 
         $max_height = $_POST['_popup_max_height'] ?? '';
         Popup_Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
+
+        // Desktop slides
+        $slides_desktop = $_POST['_popup_slides_desktop'] ?? [];
+        if (is_array($slides_desktop)) {
+            $slides_desktop = array_values(array_filter(array_map(function($content) {
+                return wp_kses_post($content);
+            }, $slides_desktop), function($content) {
+                return !empty(trim(strip_tags($content)));
+            }));
+        } else {
+            $slides_desktop = [];
+        }
+        Popup_Fields::save($post_id, '_popup_slides_desktop', $slides_desktop);
     }
 
     /**
@@ -190,6 +291,22 @@ class Popup_Admin {
                 [],
                 POPUP_VERSION
             );
+        }
+
+        $js_file = POPUP_DIR . 'assets/js/admin.js';
+        if (file_exists($js_file)) {
+            wp_enqueue_script(
+                'popup-admin',
+                POPUP_URL . 'assets/js/admin.js',
+                ['jquery'],
+                POPUP_VERSION,
+                true
+            );
+
+            wp_localize_script('popup-admin', 'popupAdmin', [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce'   => wp_create_nonce('popup_admin_nonce'),
+            ]);
         }
 
         // Inline script for trigger type toggle

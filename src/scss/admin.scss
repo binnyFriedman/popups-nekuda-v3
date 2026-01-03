@@ -40,3 +40,46 @@
 .popup-trigger--exit_intent .popup-field--timeout {
   display: none;
 }
+
+// Slides Repeater
+.popup-slides-repeater {
+  .popup-slides-list {
+    margin-bottom: 1em;
+  }
+
+  .popup-add-slide {
+    margin-top: 0.5em;
+  }
+}
+
+.popup-slide-item {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 1em;
+  padding: 1em;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.popup-slide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid #ddd;
+}
+
+.popup-slide-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.popup-slide-content {
+  .wp-editor-wrap {
+    margin-top: 0;
+  }
+}
