@@ -1,17 +1,35 @@
-declare const popupAdmin: {
-    ajaxUrl: string;
-    nonce: string;
-};
+/// <reference path="./types/wordpress.d.ts" />
 
-declare const jQuery: any;
-declare const tinymce: any;
-declare const quicktags: any;
-declare const QTags: any;
-declare const wpActiveEditor: string;
-declare const wp: any;
+// Timing constants (in milliseconds)
+const WP_SCRIPT_INIT_DELAY_MS = 100;   // Allow WP scripts to register TinyMCE plugins
+const TINYMCE_READY_DELAY_MS = 1000;   // Wait for TinyMCE editors to fully render
+const DOM_RENDER_DELAY_MS = 500;       // Allow DOM updates before sync status check
 
 (function($: any) {
     'use strict';
+
+    const NOTICE_AUTO_DISMISS_MS = 5000;
+
+    /**
+     * Show a WordPress-style admin notice
+     */
+    function showAdminNotice(message: string, type: 'error' | 'warning' | 'success' = 'error'): void {
+        const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
+        
+        // Insert after the page title
+        const $heading = $('.wrap h1').first();
+        if ($heading.length) {
+            $heading.after($notice);
+        } else {
+            // Fallback: prepend to .wrap
+            $('.wrap').prepend($notice);
+        }
+
+        // Auto-dismiss after delay
+        setTimeout(() => {
+            $notice.fadeOut(300, () => $notice.remove());
+        }, NOTICE_AUTO_DISMISS_MS);
+    }
 
     function initSlidesRepeater(): void {
         $('.popup-slides-repeater').each(function(this: HTMLElement) {
@@ -40,15 +58,15 @@ declare const wp: any;
 
                         // Execute the WordPress editor scripts if provided
                         if (response.data.scripts) {
-                            // Create a temporary container to execute scripts
-                            const $scriptContainer = $('<div>').html(response.data.scripts);
-                            $scriptContainer.find('script').each(function(this: HTMLElement) {
-                                try {
-                                    // eslint-disable-next-line no-eval
-                                    eval($(this).text());
-                                } catch (e) {
-                                    console.warn('Script execution error:', e);
-                                }
+                            // Create scripts via DOM for safer execution than eval()
+                            const scriptContainer = document.createElement('div');
+                            scriptContainer.innerHTML = response.data.scripts;
+                            const scripts = scriptContainer.querySelectorAll('script');
+                            scripts.forEach((oldScript) => {
+                                const newScript = document.createElement('script');
+                                newScript.textContent = oldScript.textContent;
+                                document.body.appendChild(newScript);
+                                document.body.removeChild(newScript);
                             });
                         }
 
@@ -63,11 +81,13 @@ declare const wp: any;
                             } else {
                                 // Add our change handler to the existing editor
                                 const editor = tinymce.get(editorId);
-                                editor.on('change keyup', function() {
-                                    editor.save();
-                                });
+                                if (editor) {
+                                    editor.on('change keyup', function() {
+                                        editor.save();
+                                    });
+                                }
                             }
-                        }, 100);
+                        }, WP_SCRIPT_INIT_DELAY_MS);
 
                         updateSlideNumbers($list);
                         bindRemoveButton($newSlide);
@@ -80,7 +100,7 @@ declare const wp: any;
                     $addBtn.prop('disabled', false).text('Add Slide');
                 }).fail(function() {
                     $addBtn.prop('disabled', false).text('Add Slide');
-                    alert('Failed to add slide. Please try again.');
+                    showAdminNotice('Failed to add slide. Please try again.');
                 });
             });
 
@@ -97,14 +117,17 @@ declare const wp: any;
             const slideCount = $list.find('.popup-slide-item').length;
 
             if (slideCount <= 1) {
-                alert('You must have at least one slide.');
+                showAdminNotice('You must have at least one slide.', 'warning');
                 return;
             }
 
             // Remove TinyMCE instance before removing DOM
             const editorId = $slide.find('textarea').attr('id');
-            if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
-                tinymce.get(editorId).remove();
+            if (editorId && typeof tinymce !== 'undefined') {
+                const editor = tinymce.get(editorId);
+                if (editor) {
+                    editor.remove();
+                }
             }
 
             $slide.remove();
@@ -310,8 +333,11 @@ declare const wp: any;
             let content = $textarea.val() as string;
 
             // Also check TinyMCE if available
-            if (editorId && typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
-                content = tinymce.get(editorId).getContent();
+            if (editorId && typeof tinymce !== 'undefined') {
+                const editor = tinymce.get(editorId);
+                if (editor) {
+                    content = editor.getContent();
+                }
             }
 
             if (content && content.trim() !== '') {
@@ -337,7 +363,7 @@ declare const wp: any;
         syncTinyMCEOnSubmit();
         
         // Initial sync status check
-        setTimeout(updateMobileSyncStatus, 500);
+        setTimeout(updateMobileSyncStatus, DOM_RENDER_DELAY_MS);
         
         // Add change handlers to existing editors after they're initialized
         setTimeout(function() {
@@ -355,6 +381,6 @@ declare const wp: any;
                     }
                 }
             }
-        }, 1000);
+        }, TINYMCE_READY_DELAY_MS);
     });
 })(jQuery);
