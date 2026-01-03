@@ -17,32 +17,35 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('POPUPS_NEKUDA_VERSION', '3.0.1');
+define('POPUPS_NEKUDA_VERSION', '3.0.2');
 define('POPUPS_NEKUDA_FILE', __FILE__);
 define('POPUPS_NEKUDA_DIR', plugin_dir_path(__FILE__));
 define('POPUPS_NEKUDA_URL', plugin_dir_url(__FILE__));
 define('POPUPS_NEKUDA_BASENAME', plugin_basename(__FILE__));
 define('POPUPS_NEKUDA_TEXT_DOMAIN', 'popups-nekuda');
 
-// Legacy aliases (deprecated - will be removed in 4.0)
-define('POPUP_VERSION', POPUPS_NEKUDA_VERSION);
-define('POPUP_DIR', POPUPS_NEKUDA_DIR);
-define('POPUP_URL', POPUPS_NEKUDA_URL);
-define('PLUGIN_NAMESPACE', POPUPS_NEKUDA_TEXT_DOMAIN);
+function popups_nekuda_is_plugin_class(string $class): bool {
+    return strpos($class, 'PopupsNekuda\\') === 0;
+}
 
-// Autoloader for PopupsNekuda namespace
+function popups_nekuda_get_class_file_path(string $class): string {
+    $relative_class = substr($class, strlen('PopupsNekuda\\'));
+    $path_parts = explode('\\', $relative_class);
+    $class_name = array_pop($path_parts);
+    $subdir = !empty($path_parts) ? implode('/', $path_parts) . '/' : '';
+    
+    return POPUPS_NEKUDA_DIR . 'includes/' . $subdir . 'class-' . strtolower($class_name) . '.php';
+}
+
 spl_autoload_register(function (string $class): void {
-    $prefix = 'PopupsNekuda\\';
-    if (strpos($class, $prefix) !== 0) {
+    if (!popups_nekuda_is_plugin_class($class)) {
         return;
     }
 
-    $relative_class = substr($class, strlen($prefix));
-    $file = POPUPS_NEKUDA_DIR . 'includes/class-' . strtolower($relative_class) . '.php';
+    $file = popups_nekuda_get_class_file_path($class);
 
     if (file_exists($file)) {
-        // phpcs:disable -- Autoloader requires dynamic file inclusion
-        require_once $file;
+        require_once $file; // phpcs:ignore
     }
 });
 
@@ -97,8 +100,9 @@ function popups_nekuda_init_updates(): void {
     );
 
     // Download the ZIP from GitHub releases
-    // @phpstan-ignore-next-line - getVcsApi() returns GitHubApi which has this method via trait
-    $update_checker->getVcsApi()->enableReleaseAssets();
+    /** @var \YahnisElsts\PluginUpdateChecker\v5p4\Vcs\GitHubApi $api */
+    $api = $update_checker->getVcsApi();
+    $api->enableReleaseAssets();
 }
 add_action('admin_init', 'popups_nekuda_init_updates');
 

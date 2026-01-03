@@ -28,7 +28,7 @@ pluginContent = pluginContent.replace(
 
 // Update POPUPS_NEKUDA_VERSION constant
 pluginContent = pluginContent.replace(
-    /(define\('POPUPS_NEKUDA_VERSION',\s*').*(';)/,
+    /(define\('POPUPS_NEKUDA_VERSION',\s*')[\d.]+('\);)/,
     `$1${version}$2`
 );
 
