@@ -1,6 +1,6 @@
 {
   "name": "popups-nekuda",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "WordPress popup plugin - zero dependencies",
   "scripts": {
     "build:ts": "esbuild src/ts/popup.ts --bundle --minify --sourcemap=external --outfile=assets/js/popup.js && esbuild src/ts/admin.ts --bundle --minify --sourcemap=external --outfile=assets/js/admin.js",
