@@ -3,11 +3,13 @@
  * Lightweight meta field helper
  */
 
+namespace PopupsNekuda;
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Popup_Fields {
+class Fields {
 
     /**
      * Get meta value with default fallback

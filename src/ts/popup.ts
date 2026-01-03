@@ -1,4 +1,4 @@
-import { setCookie, getCookie, trapFocus, detectSwipe } from './utils';
+import { setCookie, getCookie, trapFocus } from './utils';
 
 interface PopupElement extends HTMLElement {
     dataset: {
@@ -21,6 +21,9 @@ interface PopupState {
 const AUTO_ADVANCE_DELAY = 5000;
 const popupStates = new Map<string, PopupState>();
 
+// Dev mode: skip cookie checks for debugging (set to false for production)
+const DEV_MODE = true;
+
 /**
  * Initialize all popups on DOM ready
  */
@@ -31,8 +34,8 @@ function init(): void {
         const id = popup.dataset.popupId;
         const cookieKey = popup.dataset.cookieKey;
 
-        // Check cookie - skip if already shown
-        if (getCookie(`popup_${cookieKey}`)) {
+        // Check cookie - skip if already shown (disabled in dev mode)
+        if (!DEV_MODE && getCookie(`popup_${cookieKey}`)) {
             return;
         }
 
@@ -113,10 +116,12 @@ function showPopup(popup: PopupElement): void {
     // Start auto-advance for slides
     startAutoAdvance(popup);
 
-    // Set cookie on show
-    const cookieKey = popup.dataset.cookieKey;
-    const cookieExpiry = parseInt(popup.dataset.cookieExpiry, 10);
-    setCookie(`popup_${cookieKey}`, '1', cookieExpiry);
+    // Set cookie on show (disabled in dev mode)
+    if (!DEV_MODE) {
+        const cookieKey = popup.dataset.cookieKey;
+        const cookieExpiry = parseInt(popup.dataset.cookieExpiry, 10);
+        setCookie(`popup_${cookieKey}`, '1', cookieExpiry);
+    }
 }
 
 /**
@@ -163,39 +168,15 @@ function setupCloseHandlers(popup: PopupElement): void {
 }
 
 /**
- * Set up slide navigation
+ * Set up slide behavior (pause on hover only, no navigation)
  */
 function setupSlideNavigation(popup: PopupElement): void {
     const contents = popup.querySelectorAll<HTMLElement>('.popup__content');
 
     contents.forEach((content) => {
         const slides = content.querySelectorAll<HTMLElement>('.popup__slide');
-        const dots = content.querySelectorAll<HTMLButtonElement>('.popup__dot');
 
         if (slides.length <= 1) return;
-
-        // Dot click
-        dots.forEach((dot, index) => {
-            dot.addEventListener('click', () => {
-                goToSlide(popup, content, index);
-                stopAutoAdvance(popup);
-            });
-        });
-
-        // Swipe detection
-        detectSwipe(content, (direction) => {
-            const state = popupStates.get(popup.dataset.popupId);
-            if (!state) return;
-
-            const currentIndex = getCurrentSlideIndex(content);
-            const totalSlides = slides.length;
-
-            if (direction === 'left') {
-                goToSlide(popup, content, (currentIndex + 1) % totalSlides);
-            } else {
-                goToSlide(popup, content, (currentIndex - 1 + totalSlides) % totalSlides);
-            }
-        });
 
         // Pause auto-advance on hover
         content.addEventListener('mouseenter', () => stopAutoAdvance(popup));
@@ -222,14 +203,9 @@ function getCurrentSlideIndex(content: HTMLElement): number {
  */
 function goToSlide(popup: PopupElement, content: HTMLElement, index: number): void {
     const slides = content.querySelectorAll<HTMLElement>('.popup__slide');
-    const dots = content.querySelectorAll<HTMLButtonElement>('.popup__dot');
 
     slides.forEach((slide, i) => {
         slide.classList.toggle('is-active', i === index);
-    });
-
-    dots.forEach((dot, i) => {
-        dot.classList.toggle('is-active', i === index);
     });
 
     const state = popupStates.get(popup.dataset.popupId);
@@ -245,18 +221,26 @@ function startAutoAdvance(popup: PopupElement): void {
     const state = popupStates.get(popup.dataset.popupId);
     if (!state || state.autoAdvanceInterval) return;
 
+    // Get the currently visible content (desktop or mobile)
     const contents = popup.querySelectorAll<HTMLElement>('.popup__content');
+    let activeContent: HTMLElement | null = null;
 
     contents.forEach((content) => {
-        const slides = content.querySelectorAll<HTMLElement>('.popup__slide');
-        if (slides.length <= 1) return;
-
-        state.autoAdvanceInterval = window.setInterval(() => {
-            const currentIndex = getCurrentSlideIndex(content);
-            const nextIndex = (currentIndex + 1) % slides.length;
-            goToSlide(popup, content, nextIndex);
-        }, AUTO_ADVANCE_DELAY);
+        if (content.offsetParent !== null) {
+            activeContent = content;
+        }
     });
+
+    if (!activeContent) return;
+
+    const slides = activeContent.querySelectorAll<HTMLElement>('.popup__slide');
+    if (slides.length <= 1) return;
+
+    state.autoAdvanceInterval = window.setInterval(() => {
+        const currentIndex = getCurrentSlideIndex(activeContent!);
+        const nextIndex = (currentIndex + 1) % slides.length;
+        goToSlide(popup, activeContent!, nextIndex);
+    }, AUTO_ADVANCE_DELAY);
 }
 
 /**

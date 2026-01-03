@@ -3,11 +3,13 @@
  * Frontend rendering and asset enqueue
  */
 
+namespace PopupsNekuda;
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Popup_Frontend {
+class Frontend {
 
     public function __construct() {
         add_action('wp_enqueue_scripts', [$this, 'maybe_enqueue_assets']);
@@ -84,8 +86,8 @@ class Popup_Frontend {
     private function is_popup_scheduled(\WP_Post $popup): bool {
         $today = date('Y-m-d');
 
-        $start = Popup_Fields::get($popup->ID, '_popup_schedule_start', '');
-        $end = Popup_Fields::get($popup->ID, '_popup_schedule_end', '');
+        $start = Fields::get($popup->ID, '_popup_schedule_start', '');
+        $end = Fields::get($popup->ID, '_popup_schedule_end', '');
 
         if (!empty($start) && $today < $start) {
             return false;
@@ -116,27 +118,27 @@ class Popup_Frontend {
      * Get all popup data for template
      */
     private function get_popup_data(\WP_Post $popup): array {
-        $slides_desktop = Popup_Fields::get($popup->ID, '_popup_slides_desktop', []);
-        $slides_mobile = Popup_Fields::get($popup->ID, '_popup_slides_mobile', []);
+        $slides_desktop = Fields::get($popup->ID, '_popup_slides_desktop', []);
+        $slides_mobile = Fields::get($popup->ID, '_popup_slides_mobile', []);
 
         // Fallback: use desktop content for mobile if mobile is empty
         if (empty($slides_mobile)) {
             $slides_mobile = $slides_desktop;
         }
 
-        $cookie_key = Popup_Fields::get($popup->ID, '_popup_cookie_key', '');
+        $cookie_key = Fields::get($popup->ID, '_popup_cookie_key', '');
         if (empty($cookie_key)) {
             $cookie_key = $popup->post_name ?: 'popup_' . $popup->ID;
         }
 
         return [
             'id'              => $popup->ID,
-            'trigger_type'    => Popup_Fields::get($popup->ID, '_popup_trigger_type', 'timeout'),
-            'trigger_timeout' => Popup_Fields::get($popup->ID, '_popup_trigger_timeout', 3),
+            'trigger_type'    => Fields::get($popup->ID, '_popup_trigger_type', 'timeout'),
+            'trigger_timeout' => Fields::get($popup->ID, '_popup_trigger_timeout', 3),
             'cookie_key'      => $cookie_key,
-            'cookie_expiry'   => Popup_Fields::get($popup->ID, '_popup_cookie_expiry', 30),
-            'max_width'       => Popup_Fields::get($popup->ID, '_popup_max_width', 600),
-            'max_height'      => Popup_Fields::get($popup->ID, '_popup_max_height', ''),
+            'cookie_expiry'   => Fields::get($popup->ID, '_popup_cookie_expiry', 30),
+            'max_width'       => Fields::get($popup->ID, '_popup_max_width', 600),
+            'max_height'      => Fields::get($popup->ID, '_popup_max_height', ''),
             'slides_desktop'  => is_array($slides_desktop) ? $slides_desktop : [],
             'slides_mobile'   => is_array($slides_mobile) ? $slides_mobile : [],
         ];

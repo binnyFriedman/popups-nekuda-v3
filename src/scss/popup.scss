@@ -114,41 +114,6 @@
   }
 }
 
-// Navigation dots
-.popup__nav {
-  padding: 15px;
-  text-align: center;
-}
-
-.popup__dots {
-  display: inline-flex;
-  gap: 8px;
-}
-
-.popup__dot {
-  width: 12px;
-  height: 12px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: #ccc;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: #999;
-  }
-
-  &.is-active {
-    background: #333;
-  }
-
-  &:focus {
-    outline: 2px solid #005fcc;
-    outline-offset: 2px;
-  }
-}
-
 // Screen reader only utility
 .sr-only {
   position: absolute;

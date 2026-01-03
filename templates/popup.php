@@ -34,18 +34,6 @@ $max_height_style = !empty($data['max_height']) ? $data['max_height'] . 'px' : '
                 </div>
                 <?php endforeach; ?>
             </div>
-
-            <?php if (count($data['slides_desktop']) > 1): ?>
-            <nav class="popup__nav" aria-label="<?php esc_attr_e('Slides', 'popups-nekuda'); ?>">
-                <div class="popup__dots">
-                    <?php foreach ($data['slides_desktop'] as $index => $slide): ?>
-                    <button class="popup__dot<?php echo $index === 0 ? ' is-active' : ''; ?>"
-                            data-index="<?php echo esc_attr($index); ?>"
-                            aria-label="<?php echo esc_attr(sprintf(__('Slide %d', 'popups-nekuda'), $index + 1)); ?>"></button>
-                    <?php endforeach; ?>
-                </div>
-            </nav>
-            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -59,18 +47,6 @@ $max_height_style = !empty($data['max_height']) ? $data['max_height'] . 'px' : '
                 </div>
                 <?php endforeach; ?>
             </div>
-
-            <?php if (count($data['slides_mobile']) > 1): ?>
-            <nav class="popup__nav" aria-label="<?php esc_attr_e('Slides', 'popups-nekuda'); ?>">
-                <div class="popup__dots">
-                    <?php foreach ($data['slides_mobile'] as $index => $slide): ?>
-                    <button class="popup__dot<?php echo $index === 0 ? ' is-active' : ''; ?>"
-                            data-index="<?php echo esc_attr($index); ?>"
-                            aria-label="<?php echo esc_attr(sprintf(__('Slide %d', 'popups-nekuda'), $index + 1)); ?>"></button>
-                    <?php endforeach; ?>
-                </div>
-            </nav>
-            <?php endif; ?>
         </div>
         <?php endif; ?>
 

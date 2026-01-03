@@ -3,11 +3,13 @@
  * Admin meta boxes and save handlers
  */
 
+namespace PopupsNekuda;
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class Popup_Admin {
+class Admin {
 
     public function __construct() {
         add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
@@ -72,7 +74,7 @@ class Popup_Admin {
     public function render_trigger_settings(\WP_Post $post): void {
         wp_nonce_field('popup_save_meta', 'popup_meta_nonce');
 
-        Popup_Fields::radio($post->ID, '_popup_trigger_type', [
+        Fields::radio($post->ID, '_popup_trigger_type', [
             'exit_intent' => __('Exit Intent', 'popups-nekuda'),
             'timeout'     => __('Timeout', 'popups-nekuda'),
         ], [
@@ -80,7 +82,7 @@ class Popup_Admin {
             'default' => 'timeout',
         ]);
 
-        Popup_Fields::text($post->ID, '_popup_trigger_timeout', [
+        Fields::text($post->ID, '_popup_trigger_timeout', [
             'label'   => __('Timeout (seconds)', 'popups-nekuda'),
             'type'    => 'number',
             'default' => '3',
@@ -93,30 +95,30 @@ class Popup_Admin {
      * Render Cookie & Scheduling meta box
      */
     public function render_cookie_scheduling(\WP_Post $post): void {
-        $cookie_key = Popup_Fields::get($post->ID, '_popup_cookie_key', '');
+        $cookie_key = Fields::get($post->ID, '_popup_cookie_key', '');
         if (empty($cookie_key) && $post->post_name) {
             $cookie_key = $post->post_name;
         }
 
-        Popup_Fields::text($post->ID, '_popup_cookie_key', [
+        Fields::text($post->ID, '_popup_cookie_key', [
             'label'   => __('Cookie Key', 'popups-nekuda'),
             'default' => $cookie_key,
             'attrs'   => 'placeholder="auto-generated-from-slug"',
         ]);
 
-        Popup_Fields::text($post->ID, '_popup_cookie_expiry', [
+        Fields::text($post->ID, '_popup_cookie_expiry', [
             'label'   => __('Cookie Expiry (days)', 'popups-nekuda'),
             'type'    => 'number',
             'default' => '30',
             'attrs'   => 'min="1" step="1"',
         ]);
 
-        Popup_Fields::text($post->ID, '_popup_schedule_start', [
+        Fields::text($post->ID, '_popup_schedule_start', [
             'label' => __('Schedule Start Date (optional)', 'popups-nekuda'),
             'type'  => 'date',
         ]);
 
-        Popup_Fields::text($post->ID, '_popup_schedule_end', [
+        Fields::text($post->ID, '_popup_schedule_end', [
             'label' => __('Schedule End Date (optional)', 'popups-nekuda'),
             'type'  => 'date',
         ]);
@@ -126,14 +128,14 @@ class Popup_Admin {
      * Render Display Constraints meta box
      */
     public function render_display_constraints(\WP_Post $post): void {
-        Popup_Fields::text($post->ID, '_popup_max_width', [
+        Fields::text($post->ID, '_popup_max_width', [
             'label'   => __('Max Width (px)', 'popups-nekuda'),
             'type'    => 'number',
             'default' => '600',
             'attrs'   => 'min="200" step="10"',
         ]);
 
-        Popup_Fields::text($post->ID, '_popup_max_height', [
+        Fields::text($post->ID, '_popup_max_height', [
             'label'   => __('Max Height (px or empty for auto)', 'popups-nekuda'),
             'type'    => 'number',
             'attrs'   => 'min="100" step="10" placeholder="auto"',
@@ -159,7 +161,7 @@ class Popup_Admin {
      * Render slides repeater UI
      */
     private function render_slides_repeater(int $post_id, string $key, string $type): void {
-        $slides = Popup_Fields::get($post_id, $key, []);
+        $slides = Fields::get($post_id, $key, []);
         if (!is_array($slides)) {
             $slides = [];
         }
@@ -184,7 +186,8 @@ class Popup_Admin {
      * Render a single slide with wp_editor
      */
     private function render_single_slide(string $key, int $index, string $content): void {
-        $editor_id = $key . '_' . $index;
+        // Create a clean editor ID (TinyMCE has issues with IDs starting with underscore)
+        $editor_id = 'popup_editor_' . str_replace('_popup_slides_', '', $key) . '_' . $index;
         $field_name = $key . '[' . $index . ']';
 
         echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
@@ -219,11 +222,42 @@ class Popup_Admin {
             wp_send_json_error('Invalid key');
         }
 
+        // Create editor ID matching the JS format
+        $editor_id = 'popup_editor_' . str_replace('_popup_slides_', '', $key) . '_' . $index;
+        $field_name = $key . '[' . $index . ']';
+
         ob_start();
-        $this->render_single_slide($key, $index, '');
+        echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
+        echo '<div class="popup-slide-header">';
+        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', 'popups-nekuda'), $index + 1) . '</span>';
+        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', 'popups-nekuda') . '</button>';
+        echo '</div>';
+        echo '<div class="popup-slide-content">';
+
+        wp_editor('', $editor_id, [
+            'textarea_name' => $field_name,
+            'textarea_rows' => 10,
+            'media_buttons' => true,
+            'teeny'         => false,
+            'quicktags'     => true,
+            'tinymce'       => [
+                'wpautop' => true,
+            ],
+        ]);
+
+        echo '</div>';
+        echo '</div>';
         $html = ob_get_clean();
 
-        wp_send_json_success(['html' => $html]);
+        // Get the TinyMCE and Quicktags settings for this editor
+        ob_start();
+        \_WP_Editors::editor_js();
+        $scripts = ob_get_clean();
+
+        wp_send_json_success([
+            'html'    => $html,
+            'scripts' => $scripts,
+        ]);
     }
 
     /**
@@ -247,52 +281,70 @@ class Popup_Admin {
         if (!in_array($trigger_type, ['exit_intent', 'timeout'])) {
             $trigger_type = 'timeout';
         }
-        Popup_Fields::save($post_id, '_popup_trigger_type', $trigger_type);
+        Fields::save($post_id, '_popup_trigger_type', $trigger_type);
 
         $timeout = absint($_POST['_popup_trigger_timeout'] ?? 3);
-        Popup_Fields::save($post_id, '_popup_trigger_timeout', $timeout);
+        Fields::save($post_id, '_popup_trigger_timeout', $timeout);
 
         // Cookie & scheduling
         $cookie_key = sanitize_key($_POST['_popup_cookie_key'] ?? '');
-        Popup_Fields::save($post_id, '_popup_cookie_key', $cookie_key);
+        Fields::save($post_id, '_popup_cookie_key', $cookie_key);
 
         $cookie_expiry = absint($_POST['_popup_cookie_expiry'] ?? 30);
-        Popup_Fields::save($post_id, '_popup_cookie_expiry', $cookie_expiry);
+        Fields::save($post_id, '_popup_cookie_expiry', $cookie_expiry);
 
         $schedule_start = sanitize_text_field($_POST['_popup_schedule_start'] ?? '');
-        Popup_Fields::save($post_id, '_popup_schedule_start', $schedule_start);
+        Fields::save($post_id, '_popup_schedule_start', $schedule_start);
 
         $schedule_end = sanitize_text_field($_POST['_popup_schedule_end'] ?? '');
-        Popup_Fields::save($post_id, '_popup_schedule_end', $schedule_end);
+        Fields::save($post_id, '_popup_schedule_end', $schedule_end);
 
         // Display constraints
         $max_width = absint($_POST['_popup_max_width'] ?? 600);
-        Popup_Fields::save($post_id, '_popup_max_width', $max_width ?: 600);
+        Fields::save($post_id, '_popup_max_width', $max_width ?: 600);
 
         $max_height = $_POST['_popup_max_height'] ?? '';
-        Popup_Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
+        Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
 
         // Desktop slides
-        $slides_desktop = $this->sanitize_slides($_POST['_popup_slides_desktop'] ?? []);
-        Popup_Fields::save($post_id, '_popup_slides_desktop', $slides_desktop);
+        $raw_desktop = isset($_POST['_popup_slides_desktop']) ? $_POST['_popup_slides_desktop'] : [];
+        
+        // Debug: Log what we're receiving
+        error_log('Popup Save - Raw Desktop: ' . print_r($raw_desktop, true));
+        
+        $slides_desktop = $this->sanitize_slides($raw_desktop);
+        
+        error_log('Popup Save - Sanitized Desktop: ' . print_r($slides_desktop, true));
+        
+        Fields::save($post_id, '_popup_slides_desktop', $slides_desktop);
 
         // Mobile slides
-        $slides_mobile = $this->sanitize_slides($_POST['_popup_slides_mobile'] ?? []);
-        Popup_Fields::save($post_id, '_popup_slides_mobile', $slides_mobile);
+        $raw_mobile = isset($_POST['_popup_slides_mobile']) ? $_POST['_popup_slides_mobile'] : [];
+        $slides_mobile = $this->sanitize_slides($raw_mobile);
+        Fields::save($post_id, '_popup_slides_mobile', $slides_mobile);
     }
 
     /**
      * Sanitize slides array
      */
-    private function sanitize_slides(array $slides): array {
+    private function sanitize_slides($slides): array {
         if (!is_array($slides)) {
             return [];
         }
-        return array_values(array_filter(array_map(function($content) {
-            return wp_kses_post($content);
-        }, $slides), function($content) {
-            return !empty(trim(strip_tags($content)));
-        }));
+        
+        $sanitized = [];
+        foreach ($slides as $content) {
+            if (!is_string($content)) {
+                continue;
+            }
+            $clean = wp_kses_post($content);
+            // Keep slide if it has any content (including images)
+            if (!empty(trim($clean))) {
+                $sanitized[] = $clean;
+            }
+        }
+        
+        return array_values($sanitized);
     }
 
     /**
@@ -309,6 +361,9 @@ class Popup_Admin {
             return;
         }
 
+        // Enqueue media library for dynamically added editors
+        wp_enqueue_media();
+
         $css_file = POPUP_DIR . 'assets/css/admin.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
@@ -324,7 +379,7 @@ class Popup_Admin {
             wp_enqueue_script(
                 'popup-admin',
                 POPUP_URL . 'assets/js/admin.js',
-                ['jquery'],
+                ['jquery', 'wp-tinymce'],
                 POPUP_VERSION,
                 true
             );

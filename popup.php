@@ -18,16 +18,30 @@ define('POPUP_VERSION', '3.0.0');
 define('POPUP_DIR', plugin_dir_path(__FILE__));
 define('POPUP_URL', plugin_dir_url(__FILE__));
 
-// Include classes
-require_once POPUP_DIR . 'includes/class-fields.php';
-require_once POPUP_DIR . 'includes/class-admin.php';
-require_once POPUP_DIR . 'includes/class-frontend.php';
+// Autoloader for PopupsNekuda namespace
+spl_autoload_register(function (string $class): void {
+    $prefix = 'PopupsNekuda\\';
+    if (strpos($class, $prefix) !== 0) {
+        return;
+    }
+
+    $relative_class = substr($class, strlen($prefix));
+    $file = POPUP_DIR . 'includes/class-' . strtolower($relative_class) . '.php';
+
+    if (file_exists($file)) {
+        // phpcs:disable -- Autoloader requires dynamic file inclusion
+        require_once $file;
+    }
+});
+
+use PopupsNekuda\Admin;
+use PopupsNekuda\Frontend;
 
 // Initialize
 if (is_admin()) {
-    $GLOBALS['popup_admin'] = new Popup_Admin();
+    $GLOBALS['popup_admin'] = new Admin();
 } else {
-    $GLOBALS['popup_frontend'] = new Popup_Frontend();
+    $GLOBALS['popup_frontend'] = new Frontend();
 }
 
 /**

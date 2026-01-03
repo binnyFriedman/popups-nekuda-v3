@@ -3,15 +3,16 @@
   "version": "3.0.0",
   "description": "WordPress popup plugin - zero dependencies",
   "scripts": {
-    "build:ts": "tsc",
+    "build:ts": "esbuild src/ts/popup.ts --bundle --minify --outfile=assets/js/popup.js && esbuild src/ts/admin.ts --bundle --minify --outfile=assets/js/admin.js",
     "build:scss": "sass src/scss:assets/css --style=compressed --no-source-map",
     "build": "npm run build:ts && npm run build:scss",
-    "watch:ts": "tsc -w",
+    "watch:ts": "concurrently \"esbuild src/ts/popup.ts --bundle --watch --outfile=assets/js/popup.js\" \"esbuild src/ts/admin.ts --bundle --watch --outfile=assets/js/admin.js\"",
     "watch:scss": "sass --watch src/scss:assets/css",
     "watch": "concurrently \"npm run watch:ts\" \"npm run watch:scss\""
   },
   "devDependencies": {
     "concurrently": "^8.2.0",
+    "esbuild": "^0.19.0",
     "sass": "^1.69.0",
     "typescript": "^5.3.0"
   }
