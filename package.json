@@ -20,6 +20,7 @@
     "publish": "npm run release && npm run github:release"
   },
   "devDependencies": {
+    "@types/jquery": "^3.5.33",
     "archiver": "^6.0.2",
     "concurrently": "^8.2.0",
     "esbuild": "^0.19.0",
