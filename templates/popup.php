@@ -33,19 +33,27 @@ $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['sli
             <?php echo esc_html(get_the_title($data['id'])); ?>
         </h2>
         
-        <button class="popup__close" aria-label="<?php esc_attr_e('Close popup', 'popups-nekuda'); ?>">
+        <button class="popup__close liquid-glass" aria-label="<?php esc_attr_e('Close popup', 'popups-nekuda'); ?>">
             <span aria-hidden="true">&times;</span>
         </button>
+
+        <?php if ($has_multiple_slides_desktop): ?>
+        <button class="popup__pause popup__pause--desktop liquid-glass" aria-label="<?php esc_attr_e('Pause slideshow', 'popups-nekuda'); ?>" aria-pressed="false">
+            <span class="popup__pause-icon popup__pause-icon--pause" aria-hidden="true">⏸</span>
+            <span class="popup__pause-icon popup__pause-icon--play" aria-hidden="true">▶</span>
+        </button>
+        <?php endif; ?>
+
+        <?php if ($has_multiple_slides_mobile): ?>
+        <button class="popup__pause popup__pause--mobile liquid-glass" aria-label="<?php esc_attr_e('Pause slideshow', 'popups-nekuda'); ?>" aria-pressed="false">
+            <span class="popup__pause-icon popup__pause-icon--pause" aria-hidden="true">⏸</span>
+            <span class="popup__pause-icon popup__pause-icon--play" aria-hidden="true">▶</span>
+        </button>
+        <?php endif; ?>
 
         <?php if (!empty($data['slides_desktop'])): ?>
         <!-- Desktop Content -->
         <div class="popup__content popup__content--desktop">
-            <?php if ($has_multiple_slides_desktop): ?>
-            <button class="popup__pause" aria-label="<?php esc_attr_e('Pause slideshow', 'popups-nekuda'); ?>" aria-pressed="false">
-                <span class="popup__pause-icon popup__pause-icon--pause" aria-hidden="true">⏸</span>
-                <span class="popup__pause-icon popup__pause-icon--play" aria-hidden="true">▶</span>
-            </button>
-            <?php endif; ?>
             <div class="popup__slides" aria-live="polite" aria-atomic="true">
                 <?php foreach ($data['slides_desktop'] as $index => $slide): ?>
                 <div class="popup__slide<?php echo $index === 0 ? ' is-active' : ''; ?>" 
@@ -63,12 +71,6 @@ $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['sli
         <?php if (!empty($data['slides_mobile'])): ?>
         <!-- Mobile Content -->
         <div class="popup__content popup__content--mobile">
-            <?php if ($has_multiple_slides_mobile): ?>
-            <button class="popup__pause" aria-label="<?php esc_attr_e('Pause slideshow', 'popups-nekuda'); ?>" aria-pressed="false">
-                <span class="popup__pause-icon popup__pause-icon--pause" aria-hidden="true">⏸</span>
-                <span class="popup__pause-icon popup__pause-icon--play" aria-hidden="true">▶</span>
-            </button>
-            <?php endif; ?>
             <div class="popup__slides" aria-live="polite" aria-atomic="true">
                 <?php foreach ($data['slides_mobile'] as $index => $slide): ?>
                 <div class="popup__slide<?php echo $index === 0 ? ' is-active' : ''; ?>" 
