@@ -5,4 +5,3 @@
 
 // Load the plugin's autoloader
 require_once dirname(__DIR__) . '/popup.php';
-
