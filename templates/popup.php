@@ -24,7 +24,7 @@ function popups_nekuda_render_slides(array $slides, string $variant): void {
     <div class="popup__slides" aria-live="polite" aria-atomic="true">
         <?php foreach ($slides as $index => $slide): ?>
         <div class="popup__slide<?php echo $index === 0 ? ' is-active' : ''; ?>"
-            data-index="<?php echo esc_attr($index); ?>" role="group"
+            data-index="<?php echo esc_attr($index); ?>"
             aria-roledescription="<?php esc_attr_e('slide', POPUPS_NEKUDA_TEXT_DOMAIN); ?>"
             aria-label="<?php echo esc_attr(sprintf(__('Slide %1$d of %2$d', POPUPS_NEKUDA_TEXT_DOMAIN), $index + 1, count($slides))); ?>">
             <?php echo wp_kses_post($slide); ?>
