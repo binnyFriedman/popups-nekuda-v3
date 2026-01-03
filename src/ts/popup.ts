@@ -21,6 +21,7 @@ interface PopupState {
 }
 
 const AUTO_ADVANCE_DELAY = 5000;
+const TRANSITION_DURATION = 400; // Must match CSS transition duration (0.4s)
 const popupStates = new Map<string, PopupState>();
 
 // Dev mode: skip cookie checks for debugging (set to false for production)
@@ -189,7 +190,7 @@ function setupCloseHandlers(popup: PopupElement): void {
 }
 
 /**
- * Set up slide behavior (pause on hover only, no navigation)
+ * Set up slide behavior (pause on hover/touch, no navigation)
  */
 function setupSlideNavigation(popup: PopupElement): void {
     const contents = popup.querySelectorAll<HTMLElement>('.popup__content');
@@ -199,9 +200,13 @@ function setupSlideNavigation(popup: PopupElement): void {
 
         if (slides.length <= 1) return;
 
-        // Pause auto-advance on hover
+        // Pause auto-advance on mouse hover
         content.addEventListener('mouseenter', () => stopAutoAdvance(popup));
         content.addEventListener('mouseleave', () => startAutoAdvance(popup));
+
+        // Pause auto-advance on touch
+        content.addEventListener('touchstart', () => stopAutoAdvance(popup), { passive: true });
+        content.addEventListener('touchend', () => startAutoAdvance(popup), { passive: true });
     });
 }
 
@@ -220,14 +225,30 @@ function getCurrentSlideIndex(content: HTMLElement): number {
 }
 
 /**
- * Go to specific slide
+ * Go to specific slide with crossfade effect
+ * Both slides visible during transition for smooth height interpolation
  */
 function goToSlide(popup: PopupElement, content: HTMLElement, index: number): void {
     const slides = content.querySelectorAll<HTMLElement>('.popup__slide');
+    const currentIndex = getCurrentSlideIndex(content);
 
-    slides.forEach((slide, i) => {
-        slide.classList.toggle('is-active', i === index);
-    });
+    // Skip if already on this slide
+    if (currentIndex === index) return;
+
+    const currentSlide = slides[currentIndex];
+    const nextSlide = slides[index];
+
+    // Start crossfade: current slide begins fading out
+    currentSlide.classList.remove('is-active');
+    currentSlide.classList.add('is-leaving');
+
+    // New slide begins fading in
+    nextSlide.classList.add('is-active');
+
+    // After transition completes, clean up the leaving slide
+    setTimeout(() => {
+        currentSlide.classList.remove('is-leaving');
+    }, TRANSITION_DURATION);
 
     const state = popupStates.get(popup.dataset.popupId);
     if (state) {
