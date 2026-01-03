@@ -21,10 +21,13 @@ define('POPUP_URL', plugin_dir_url(__FILE__));
 // Include classes
 require_once POPUP_DIR . 'includes/class-fields.php';
 require_once POPUP_DIR . 'includes/class-admin.php';
+require_once POPUP_DIR . 'includes/class-frontend.php';
 
-// Initialize admin
+// Initialize
 if (is_admin()) {
     new Popup_Admin();
+} else {
+    new Popup_Frontend();
 }
 
 /**
