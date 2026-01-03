@@ -16,6 +16,8 @@ interface PopupState {
     autoAdvanceInterval: number | null;
     cleanupFocusTrap: (() => void) | null;
     triggered: boolean;
+    previouslyFocusedElement: HTMLElement | null;
+    isPaused: boolean;
 }
 
 const AUTO_ADVANCE_DELAY = 5000;
@@ -46,6 +48,8 @@ function init(): void {
             autoAdvanceInterval: null,
             cleanupFocusTrap: null,
             triggered: false,
+            previouslyFocusedElement: null,
+            isPaused: false,
         });
 
         // Set up trigger
@@ -56,6 +60,9 @@ function init(): void {
 
         // Set up slide navigation
         setupSlideNavigation(popup);
+
+        // Set up pause button
+        setupPauseButton(popup);
     });
 }
 
@@ -104,8 +111,14 @@ function showPopup(popup: PopupElement): void {
     const state = popupStates.get(popup.dataset.popupId);
     if (!state || state.triggered) return;
 
+    // Store the previously focused element for focus return
+    state.previouslyFocusedElement = document.activeElement as HTMLElement;
+
     state.triggered = true;
     popup.classList.add('is-open');
+
+    // Lock body scroll
+    document.body.classList.add('popup-open');
 
     // Trap focus
     const container = popup.querySelector<HTMLElement>('.popup__container');
@@ -133,6 +146,9 @@ function closePopup(popup: PopupElement): void {
 
     popup.classList.remove('is-open');
 
+    // Unlock body scroll
+    document.body.classList.remove('popup-open');
+
     // Clean up focus trap
     if (state.cleanupFocusTrap) {
         state.cleanupFocusTrap();
@@ -141,6 +157,11 @@ function closePopup(popup: PopupElement): void {
 
     // Stop auto-advance
     stopAutoAdvance(popup);
+
+    // Return focus to previously focused element
+    if (state.previouslyFocusedElement && typeof state.previouslyFocusedElement.focus === 'function') {
+        state.previouslyFocusedElement.focus();
+    }
 }
 
 /**
@@ -219,7 +240,7 @@ function goToSlide(popup: PopupElement, content: HTMLElement, index: number): vo
  */
 function startAutoAdvance(popup: PopupElement): void {
     const state = popupStates.get(popup.dataset.popupId);
-    if (!state || state.autoAdvanceInterval) return;
+    if (!state || state.autoAdvanceInterval || state.isPaused) return;
 
     // Get the currently visible content (desktop or mobile)
     const contents = popup.querySelectorAll<HTMLElement>('.popup__content');
@@ -252,6 +273,34 @@ function stopAutoAdvance(popup: PopupElement): void {
 
     clearInterval(state.autoAdvanceInterval);
     state.autoAdvanceInterval = null;
+}
+
+/**
+ * Set up pause button for accessibility
+ */
+function setupPauseButton(popup: PopupElement): void {
+    const pauseButtons = popup.querySelectorAll<HTMLButtonElement>('.popup__pause');
+
+    pauseButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const state = popupStates.get(popup.dataset.popupId);
+            if (!state) return;
+
+            state.isPaused = !state.isPaused;
+            button.setAttribute('aria-pressed', state.isPaused.toString());
+            button.setAttribute(
+                'aria-label',
+                state.isPaused ? 'Play slideshow' : 'Pause slideshow'
+            );
+            button.classList.toggle('is-paused', state.isPaused);
+
+            if (state.isPaused) {
+                stopAutoAdvance(popup);
+            } else {
+                startAutoAdvance(popup);
+            }
+        });
+    });
 }
 
 // Initialize on DOM ready
