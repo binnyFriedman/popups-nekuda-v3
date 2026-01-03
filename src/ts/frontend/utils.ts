@@ -1,5 +1,4 @@
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const MIN_SWIPE_DISTANCE = 50;
 
 export function setCookie(name: string, value: string, days: number): void {
     const expires = new Date();
@@ -49,33 +48,3 @@ export function trapFocus(container: HTMLElement): () => void {
     return () => container.removeEventListener('keydown', handleKeydown);
 }
 
-type SwipeDirection = 'left' | 'right';
-
-export function detectSwipe(
-    element: HTMLElement,
-    onSwipe: (direction: SwipeDirection) => void
-): void {
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    element.addEventListener(
-        'touchstart',
-        (e: TouchEvent) => {
-            touchStartX = e.touches[0].clientX;
-        },
-        { passive: true }
-    );
-
-    element.addEventListener(
-        'touchend',
-        (e: TouchEvent) => {
-            touchEndX = e.changedTouches[0].clientX;
-            const distance = touchEndX - touchStartX;
-
-            if (Math.abs(distance) >= MIN_SWIPE_DISTANCE) {
-                onSwipe(distance > 0 ? 'right' : 'left');
-            }
-        },
-        { passive: true }
-    );
-}

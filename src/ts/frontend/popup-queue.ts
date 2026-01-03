@@ -77,3 +77,4 @@ export class PopupQueue {
         this.triggeredIds.clear();
     }
 }
+
