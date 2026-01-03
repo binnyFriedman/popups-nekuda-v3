@@ -38,7 +38,7 @@ class Fields {
         $type = $args['type'] ?? 'text';
         $label = $args['label'] ?? '';
         $class = $args['class'] ?? '';
-        $attrs = $args['attrs'] ?? '';
+        $attrs = self::buildAttributes($args['attrs'] ?? []);
 
         echo '<p class="popup-field ' . esc_attr($class) . '">';
         if ($label) {
@@ -46,6 +46,29 @@ class Fields {
         }
         echo '<input type="' . esc_attr($type) . '" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '" ' . $attrs . '>';
         echo '</p>';
+    }
+
+    /**
+     * Build HTML attributes string from array
+     * 
+     * @param array|string $attrs Attributes as array or legacy string format
+     * @return string Escaped HTML attributes string
+     */
+    private static function buildAttributes($attrs): string {
+        // Support legacy string format during transition (to be removed in 4.0)
+        if (is_string($attrs)) {
+            return $attrs;
+        }
+
+        if (!is_array($attrs) || empty($attrs)) {
+            return '';
+        }
+
+        $output = [];
+        foreach ($attrs as $key => $value) {
+            $output[] = esc_attr($key) . '="' . esc_attr($value) . '"';
+        }
+        return implode(' ', $output);
     }
 
     /**
