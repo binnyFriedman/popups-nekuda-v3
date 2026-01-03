@@ -25,36 +25,64 @@ export function trapFocus(container: HTMLElement): () => void {
         '[tabindex]:not([tabindex="-1"])',
     ];
 
-    const focusableEls = Array.from(
-        container.querySelectorAll<HTMLElement>(focusableSelectors.join(','))
-    );
+    const getFocusableElements = (): HTMLElement[] => {
+        return Array.from(
+            container.querySelectorAll<HTMLElement>(focusableSelectors.join(','))
+        ).filter(el => el.offsetParent !== null); // Only visible elements
+    };
 
+    const focusableEls = getFocusableElements();
     if (focusableEls.length === 0) return () => {};
 
-    const firstEl = focusableEls[0];
-    const lastEl = focusableEls[focusableEls.length - 1];
+    const previouslyFocused = document.activeElement as HTMLElement | null;
 
     function handleKeydown(e: KeyboardEvent): void {
         if (e.key !== 'Tab') return;
 
+        const currentFocusable = getFocusableElements();
+        if (currentFocusable.length === 0) return;
+
+        const firstEl = currentFocusable[0];
+        const lastEl = currentFocusable[currentFocusable.length - 1];
+
         if (e.shiftKey) {
-            if (document.activeElement === firstEl) {
+            if (document.activeElement === firstEl || !container.contains(document.activeElement)) {
                 e.preventDefault();
                 lastEl.focus();
             }
         } else {
-            if (document.activeElement === lastEl) {
+            if (document.activeElement === lastEl || !container.contains(document.activeElement)) {
                 e.preventDefault();
                 firstEl.focus();
             }
         }
     }
 
-    container.addEventListener('keydown', handleKeydown);
-    firstEl.focus();
+    function handleFocusIn(e: FocusEvent): void {
+        const target = e.target as HTMLElement;
+        if (!container.contains(target)) {
+            e.preventDefault();
+            e.stopPropagation();
+            const currentFocusable = getFocusableElements();
+            if (currentFocusable.length > 0) {
+                currentFocusable[0].focus();
+            }
+        }
+    }
+
+    document.addEventListener('keydown', handleKeydown);
+    document.addEventListener('focusin', handleFocusIn);
+    
+    // Initial focus
+    focusableEls[0].focus();
 
     return () => {
-        container.removeEventListener('keydown', handleKeydown);
+        document.removeEventListener('keydown', handleKeydown);
+        document.removeEventListener('focusin', handleFocusIn);
+        // Restore focus to previously focused element
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+            previouslyFocused.focus();
+        }
     };
 }
 
