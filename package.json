@@ -1,16 +1,26 @@
 {
-  "name": "popups-nekuda-v3",
-  "version": "3.0.0",
+  "name": "popups-nekuda",
+  "version": "3.0.1",
   "description": "WordPress popup plugin - zero dependencies",
   "scripts": {
-    "build:ts": "esbuild src/ts/popup.ts --bundle --minify --outfile=assets/js/popup.js && esbuild src/ts/admin.ts --bundle --minify --outfile=assets/js/admin.js",
-    "build:scss": "sass src/scss:assets/css --style=compressed --no-source-map",
+    "build:ts": "esbuild src/ts/popup.ts --bundle --minify --sourcemap=external --outfile=assets/js/popup.js && esbuild src/ts/admin.ts --bundle --minify --sourcemap=external --outfile=assets/js/admin.js",
+    "build:scss": "sass src/scss:assets/css --style=compressed --source-map",
     "build": "npm run build:ts && npm run build:scss",
+    "build:prod": "npm run version:sync && esbuild src/ts/popup.ts --bundle --minify --outfile=assets/js/popup.js && esbuild src/ts/admin.ts --bundle --minify --outfile=assets/js/admin.js && sass src/scss:assets/css --style=compressed --no-source-map && npm run clean:maps",
     "watch:ts": "concurrently \"esbuild src/ts/popup.ts --bundle --watch --outfile=assets/js/popup.js\" \"esbuild src/ts/admin.ts --bundle --watch --outfile=assets/js/admin.js\"",
     "watch:scss": "sass --watch src/scss:assets/css",
-    "watch": "concurrently \"npm run watch:ts\" \"npm run watch:scss\""
+    "watch": "concurrently \"npm run watch:ts\" \"npm run watch:scss\"",
+    "clean:maps": "rm -f assets/css/*.map assets/js/*.map",
+    "version:sync": "node scripts/sync-version.js",
+    "version:bump": "node scripts/bump-version.js",
+    "release": "npm run version:bump && npm run build:prod && npm run zip",
+    "zip": "node scripts/create-zip.js",
+    "github:release": "node scripts/github-release.js",
+    "github:draft": "node scripts/github-release.js --draft",
+    "publish": "npm run release && npm run github:release"
   },
   "devDependencies": {
+    "archiver": "^6.0.2",
     "concurrently": "^8.2.0",
     "esbuild": "^0.19.0",
     "sass": "^1.69.0",

@@ -13,7 +13,7 @@ class Admin {
 
     public function __construct() {
         add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
-        add_action('save_post_popup', [$this, 'save_meta']);
+        add_action('save_post_nekuda_popup', [$this, 'save_meta']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('wp_ajax_popup_get_editor', [$this, 'ajax_get_editor']);
         add_action('wp_ajax_popup_search_content', [$this, 'ajax_search_content']);
@@ -25,45 +25,45 @@ class Admin {
     public function register_meta_boxes(): void {
         add_meta_box(
             'popup_trigger_settings',
-            __('Trigger Settings', PLUGIN_NAMESPACE),
+            __('Trigger Settings', POPUPS_NEKUDA_TEXT_DOMAIN),
             [$this, 'render_trigger_settings'],
-            'popup',
+            'nekuda_popup',
             'normal',
             'high'
         );
 
         add_meta_box(
             'popup_cookie_scheduling',
-            __('Cookie & Scheduling', PLUGIN_NAMESPACE),
+            __('Cookie & Scheduling', POPUPS_NEKUDA_TEXT_DOMAIN),
             [$this, 'render_cookie_scheduling'],
-            'popup',
+            'nekuda_popup',
             'normal',
             'high'
         );
 
         add_meta_box(
             'popup_display_constraints',
-            __('Display Constraints', PLUGIN_NAMESPACE),
+            __('Display Constraints', POPUPS_NEKUDA_TEXT_DOMAIN),
             [$this, 'render_display_constraints'],
-            'popup',
+            'nekuda_popup',
             'side',
             'default'
         );
 
         add_meta_box(
             'popup_display_rules',
-            __('Display Rules', PLUGIN_NAMESPACE),
+            __('Display Rules', POPUPS_NEKUDA_TEXT_DOMAIN),
             [$this, 'render_display_rules'],
-            'popup',
+            'nekuda_popup',
             'side',
             'default'
         );
 
         add_meta_box(
             'popup_content',
-            __('Popup Content', PLUGIN_NAMESPACE),
+            __('Popup Content', POPUPS_NEKUDA_TEXT_DOMAIN),
             [$this, 'render_popup_content'],
-            'popup',
+            'nekuda_popup',
             'normal',
             'default'
         );
@@ -76,15 +76,15 @@ class Admin {
         wp_nonce_field('popup_save_meta', 'popup_meta_nonce');
 
         Fields::radio($post->ID, '_popup_trigger_type', [
-            'exit_intent' => __('Exit Intent', PLUGIN_NAMESPACE),
-            'timeout'     => __('Timeout', PLUGIN_NAMESPACE),
+            'exit_intent' => __('Exit Intent', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'timeout'     => __('Timeout', POPUPS_NEKUDA_TEXT_DOMAIN),
         ], [
-            'label'   => __('Trigger Type', PLUGIN_NAMESPACE),
+            'label'   => __('Trigger Type', POPUPS_NEKUDA_TEXT_DOMAIN),
             'default' => 'timeout',
         ]);
 
         Fields::text($post->ID, '_popup_trigger_timeout', [
-            'label'   => __('Timeout (seconds)', PLUGIN_NAMESPACE),
+            'label'   => __('Timeout (seconds)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
             'default' => '3',
             'class'   => 'popup-field--timeout',
@@ -102,25 +102,25 @@ class Admin {
         }
 
         Fields::text($post->ID, '_popup_cookie_key', [
-            'label'   => __('Cookie Key', PLUGIN_NAMESPACE),
+            'label'   => __('Cookie Key', POPUPS_NEKUDA_TEXT_DOMAIN),
             'default' => $cookie_key,
             'attrs'   => 'placeholder="auto-generated-from-slug"',
         ]);
 
         Fields::text($post->ID, '_popup_cookie_expiry', [
-            'label'   => __('Cookie Expiry (days)', PLUGIN_NAMESPACE),
+            'label'   => __('Cookie Expiry (days)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
             'default' => '30',
             'attrs'   => 'min="1" step="1"',
         ]);
 
         Fields::text($post->ID, '_popup_schedule_start', [
-            'label' => __('Schedule Start Date (optional)', PLUGIN_NAMESPACE),
+            'label' => __('Schedule Start Date (optional)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'  => 'date',
         ]);
 
         Fields::text($post->ID, '_popup_schedule_end', [
-            'label' => __('Schedule End Date (optional)', PLUGIN_NAMESPACE),
+            'label' => __('Schedule End Date (optional)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'  => 'date',
         ]);
     }
@@ -130,14 +130,14 @@ class Admin {
      */
     public function render_display_constraints(\WP_Post $post): void {
         Fields::text($post->ID, '_popup_max_width', [
-            'label'   => __('Max Width (px)', PLUGIN_NAMESPACE),
+            'label'   => __('Max Width (px)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
             'default' => '600',
             'attrs'   => 'min="200" step="10"',
         ]);
 
         Fields::text($post->ID, '_popup_max_height', [
-            'label'   => __('Max Height (px or empty for auto)', PLUGIN_NAMESPACE),
+            'label'   => __('Max Height (px or empty for auto)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
             'attrs'   => 'min="100" step="10" placeholder="auto"',
         ]);
@@ -148,15 +148,15 @@ class Admin {
      */
     public function render_display_rules(\WP_Post $post): void {
         Fields::select2_multi($post->ID, '_popup_include', [
-            'label'       => __('Include', PLUGIN_NAMESPACE),
-            'description' => __('Leave empty to show on all pages', PLUGIN_NAMESPACE),
-            'placeholder' => __('Search pages, posts, categories...', PLUGIN_NAMESPACE),
+            'label'       => __('Include', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'description' => __('Leave empty to show on all pages', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'placeholder' => __('Search pages, posts, categories...', POPUPS_NEKUDA_TEXT_DOMAIN),
         ]);
 
         Fields::select2_multi($post->ID, '_popup_exclude', [
-            'label'       => __('Exclude', PLUGIN_NAMESPACE),
-            'description' => __('Hide popup on these pages', PLUGIN_NAMESPACE),
-            'placeholder' => __('Search pages, posts, categories...', PLUGIN_NAMESPACE),
+            'label'       => __('Exclude', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'description' => __('Hide popup on these pages', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'placeholder' => __('Search pages, posts, categories...', POPUPS_NEKUDA_TEXT_DOMAIN),
         ]);
     }
 
@@ -172,13 +172,13 @@ class Admin {
             <div class="popup-tabs-nav">
                 <button type="button" class="popup-tab-btn is-active" data-tab="desktop">
                     <span class="dashicons dashicons-desktop"></span>
-                    <?php _e('Desktop', PLUGIN_NAMESPACE); ?>
+                    <?php _e('Desktop', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
                 </button>
                 <button type="button" class="popup-tab-btn" data-tab="mobile">
                     <span class="dashicons dashicons-smartphone"></span>
-                    <?php _e('Mobile', PLUGIN_NAMESPACE); ?>
+                    <?php _e('Mobile', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
                     <?php if (!$has_mobile_content): ?>
-                        <span class="popup-tab-sync" title="<?php esc_attr_e('Using desktop content', PLUGIN_NAMESPACE); ?>">↔</span>
+                        <span class="popup-tab-sync" title="<?php esc_attr_e('Using desktop content', POPUPS_NEKUDA_TEXT_DOMAIN); ?>">↔</span>
                     <?php endif; ?>
                 </button>
             </div>
@@ -191,7 +191,7 @@ class Admin {
                 <div class="popup-tab-panel" data-panel="mobile">
                     <div class="popup-mobile-notice <?php echo $has_mobile_content ? 'is-hidden' : ''; ?>">
                         <span class="dashicons dashicons-info"></span>
-                        <p><?php _e('Currently using desktop slides on mobile. Add slides below to customize the mobile experience.', PLUGIN_NAMESPACE); ?></p>
+                        <p><?php _e('Currently using desktop slides on mobile. Add slides below to customize the mobile experience.', POPUPS_NEKUDA_TEXT_DOMAIN); ?></p>
                     </div>
                     <?php $this->render_slides_repeater($post->ID, '_popup_slides_mobile', 'mobile'); ?>
                 </div>
@@ -221,7 +221,7 @@ class Admin {
         }
 
         echo '</div>';
-        echo '<button type="button" class="button popup-add-slide">' . __('Add Slide', PLUGIN_NAMESPACE) . '</button>';
+        echo '<button type="button" class="button popup-add-slide">' . __('Add Slide', POPUPS_NEKUDA_TEXT_DOMAIN) . '</button>';
         echo '</div>';
     }
 
@@ -235,8 +235,8 @@ class Admin {
 
         echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
         echo '<div class="popup-slide-header">';
-        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', PLUGIN_NAMESPACE), $index + 1) . '</span>';
-        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', PLUGIN_NAMESPACE) . '</button>';
+        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', POPUPS_NEKUDA_TEXT_DOMAIN), $index + 1) . '</span>';
+        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', POPUPS_NEKUDA_TEXT_DOMAIN) . '</button>';
         echo '</div>';
         echo '<div class="popup-slide-content">';
 
@@ -272,8 +272,8 @@ class Admin {
         ob_start();
         echo '<div class="popup-slide-item" data-index="' . esc_attr($index) . '">';
         echo '<div class="popup-slide-header">';
-        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', PLUGIN_NAMESPACE), $index + 1) . '</span>';
-        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', PLUGIN_NAMESPACE) . '</button>';
+        echo '<span class="popup-slide-title">' . sprintf(__('Slide %d', POPUPS_NEKUDA_TEXT_DOMAIN), $index + 1) . '</span>';
+        echo '<button type="button" class="button popup-remove-slide">' . __('Remove', POPUPS_NEKUDA_TEXT_DOMAIN) . '</button>';
         echo '</div>';
         echo '<div class="popup-slide-content">';
 
@@ -323,18 +323,18 @@ class Admin {
         if (empty($search) || stripos('homepage', $search) !== false || stripos('home', $search) !== false) {
             $special_children[] = [
                 'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_HOME),
-                'text' => __('Homepage', PLUGIN_NAMESPACE),
+                'text' => __('Homepage', POPUPS_NEKUDA_TEXT_DOMAIN),
             ];
         }
         if (empty($search) || stripos('blog', $search) !== false) {
             $special_children[] = [
                 'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_BLOG),
-                'text' => __('Blog Page', PLUGIN_NAMESPACE),
+                'text' => __('Blog Page', POPUPS_NEKUDA_TEXT_DOMAIN),
             ];
         }
         if (!empty($special_children)) {
             $groups[] = [
-                'text'     => __('Special', PLUGIN_NAMESPACE),
+                'text'     => __('Special', POPUPS_NEKUDA_TEXT_DOMAIN),
                 'children' => $special_children,
             ];
         }
@@ -351,13 +351,13 @@ class Admin {
             if (empty($search) || stripos($type_name, $search) !== false || stripos('all', $search) !== false) {
                 $type_children[] = [
                     'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST_TYPE, $post_type->name),
-                    'text' => sprintf(__('All %s', PLUGIN_NAMESPACE), $type_name),
+                    'text' => sprintf(__('All %s', POPUPS_NEKUDA_TEXT_DOMAIN), $type_name),
                 ];
             }
         }
         if (!empty($type_children)) {
             $groups[] = [
-                'text'     => __('Post Types', PLUGIN_NAMESPACE),
+                'text'     => __('Post Types', POPUPS_NEKUDA_TEXT_DOMAIN),
                 'children' => $type_children,
             ];
         }
@@ -483,12 +483,7 @@ class Admin {
         // Desktop slides
         $raw_desktop = isset($_POST['_popup_slides_desktop']) ? $_POST['_popup_slides_desktop'] : [];
         
-        // Debug: Log what we're receiving
-        error_log('Popup Save - Raw Desktop: ' . print_r($raw_desktop, true));
-        
         $slides_desktop = $this->sanitize_slides($raw_desktop);
-        
-        error_log('Popup Save - Sanitized Desktop: ' . print_r($slides_desktop, true));
         
         Fields::save($post_id, '_popup_slides_desktop', $slides_desktop);
 
@@ -577,7 +572,7 @@ class Admin {
     public function enqueue_admin_assets(string $hook): void {
         global $post_type;
 
-        if ($post_type !== 'popup') {
+        if ($post_type !== 'nekuda_popup') {
             return;
         }
 
@@ -604,27 +599,27 @@ class Admin {
             true
         );
 
-        $css_file = POPUP_DIR . 'assets/css/admin.css';
+        $css_file = POPUPS_NEKUDA_DIR . 'assets/css/admin.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
-                'popup-admin',
-                POPUP_URL . 'assets/css/admin.css',
+                'popups-nekuda-admin',
+                POPUPS_NEKUDA_URL . 'assets/css/admin.css',
                 ['select2'],
-                POPUP_VERSION
+                POPUPS_NEKUDA_VERSION
             );
         }
 
-        $js_file = POPUP_DIR . 'assets/js/admin.js';
+        $js_file = POPUPS_NEKUDA_DIR . 'assets/js/admin.js';
         if (file_exists($js_file)) {
             wp_enqueue_script(
-                'popup-admin',
-                POPUP_URL . 'assets/js/admin.js',
+                'popups-nekuda-admin',
+                POPUPS_NEKUDA_URL . 'assets/js/admin.js',
                 ['jquery', 'wp-tinymce', 'select2'],
-                POPUP_VERSION,
+                POPUPS_NEKUDA_VERSION,
                 true
             );
 
-            wp_localize_script('popup-admin', 'popupAdmin', [
+            wp_localize_script('popups-nekuda-admin', 'popupAdmin', [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce'   => wp_create_nonce('popup_admin_nonce'),
             ]);

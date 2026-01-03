@@ -27,24 +27,24 @@ class Frontend {
         }
 
         // Enqueue CSS
-        $css_file = POPUP_DIR . 'assets/css/popup.css';
+        $css_file = POPUPS_NEKUDA_DIR . 'assets/css/popup.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
-                'popup-frontend',
-                POPUP_URL . 'assets/css/popup.css',
+                'popups-nekuda-frontend',
+                POPUPS_NEKUDA_URL . 'assets/css/popup.css',
                 [],
-                POPUP_VERSION
+                POPUPS_NEKUDA_VERSION
             );
         }
 
         // Enqueue JS
-        $js_file = POPUP_DIR . 'assets/js/popup.js';
+        $js_file = POPUPS_NEKUDA_DIR . 'assets/js/popup.js';
         if (file_exists($js_file)) {
             wp_enqueue_script(
-                'popup-frontend',
-                POPUP_URL . 'assets/js/popup.js',
+                'popups-nekuda-frontend',
+                POPUPS_NEKUDA_URL . 'assets/js/popup.js',
                 [],
-                POPUP_VERSION,
+                POPUPS_NEKUDA_VERSION,
                 true
             );
         }
@@ -70,7 +70,7 @@ class Frontend {
      */
     private function get_active_popups(): array {
         $popups = get_posts([
-            'post_type'      => 'popup',
+            'post_type'      => 'nekuda_popup',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
             'orderby'        => 'menu_order',
@@ -138,7 +138,7 @@ class Frontend {
             return;
         }
 
-        include POPUP_DIR . 'templates/popup.php';
+        include POPUPS_NEKUDA_DIR . 'templates/popup.php';
     }
 
     /**

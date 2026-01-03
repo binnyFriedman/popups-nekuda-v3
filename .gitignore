@@ -1,6 +1,14 @@
 node_modules/
+releases/
+.DS_Store
+Thumbs.db
+*.log
+
+# Built assets (generated from src/)
 assets/css/*.css
 assets/css/*.css.map
 assets/js/*.js
 assets/js/*.js.map
-.DS_Store
+
+# Vendor libraries are tracked for distribution
+# vendor/

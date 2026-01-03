@@ -25,7 +25,7 @@ const TRANSITION_DURATION = 400; // Must match CSS transition duration (0.4s)
 const popupStates = new Map<string, PopupState>();
 
 // Dev mode: skip cookie checks for debugging (set to false for production)
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 /**
  * Initialize all popups on DOM ready

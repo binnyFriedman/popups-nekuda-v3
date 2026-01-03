@@ -84,7 +84,7 @@ class Fields {
 
         $label = $args['label'] ?? '';
         $description = $args['description'] ?? '';
-        $placeholder = $args['placeholder'] ?? __('Search...', PLUGIN_NAMESPACE);
+        $placeholder = $args['placeholder'] ?? __('Search...', POPUPS_NEKUDA_TEXT_DOMAIN);
 
         echo '<div class="popup-field popup-field--select2">';
         
@@ -124,10 +124,10 @@ class Fields {
         if ($prefix === DisplayRules::PREFIX_SPECIAL) {
             $page = $parts[0] ?? '';
             if ($page === DisplayRules::SPECIAL_HOME) {
-                return __('Homepage', PLUGIN_NAMESPACE);
+                return __('Homepage', POPUPS_NEKUDA_TEXT_DOMAIN);
             }
             if ($page === DisplayRules::SPECIAL_BLOG) {
-                return __('Blog Page', PLUGIN_NAMESPACE);
+                return __('Blog Page', POPUPS_NEKUDA_TEXT_DOMAIN);
             }
             return $value;
         }
@@ -137,7 +137,7 @@ class Fields {
             $type = $parts[0] ?? '';
             $post_type_obj = get_post_type_object($type);
             if ($post_type_obj) {
-                return sprintf(__('All %s', PLUGIN_NAMESPACE), $post_type_obj->labels->name);
+                return sprintf(__('All %s', POPUPS_NEKUDA_TEXT_DOMAIN), $post_type_obj->labels->name);
             }
             return $value;
         }
@@ -151,7 +151,7 @@ class Fields {
                 $type_label = $type_obj ? $type_obj->labels->singular_name : $post->post_type;
                 return sprintf('%s (%s)', $post->post_title, $type_label);
             }
-            return sprintf(__('Post #%d', PLUGIN_NAMESPACE), $id);
+            return sprintf(__('Post #%d', POPUPS_NEKUDA_TEXT_DOMAIN), $id);
         }
 
         // Taxonomy term

@@ -33,19 +33,19 @@ $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['sli
             <?php echo esc_html(get_the_title($data['id'])); ?>
         </h2>
         
-        <button class="popup__close liquid-glass" aria-label="<?php esc_attr_e('Close popup', PLUGIN_NAMESPACE); ?>">
+        <button class="popup__close liquid-glass" aria-label="<?php esc_attr_e('Close popup', POPUPS_NEKUDA_TEXT_DOMAIN); ?>">
             <span aria-hidden="true">&times;</span>
         </button>
 
         <?php if ($has_multiple_slides_desktop): ?>
-        <button class="popup__pause popup__pause--desktop liquid-glass" aria-label="<?php esc_attr_e('Pause slideshow', PLUGIN_NAMESPACE); ?>" aria-pressed="false">
+        <button class="popup__pause popup__pause--desktop liquid-glass" aria-label="<?php esc_attr_e('Pause slideshow', POPUPS_NEKUDA_TEXT_DOMAIN); ?>" aria-pressed="false">
             <span class="popup__pause-icon popup__pause-icon--pause" aria-hidden="true">⏸</span>
             <span class="popup__pause-icon popup__pause-icon--play" aria-hidden="true">▶</span>
         </button>
         <?php endif; ?>
 
         <?php if ($has_multiple_slides_mobile): ?>
-        <button class="popup__pause popup__pause--mobile liquid-glass" aria-label="<?php esc_attr_e('Pause slideshow', PLUGIN_NAMESPACE); ?>" aria-pressed="false">
+        <button class="popup__pause popup__pause--mobile liquid-glass" aria-label="<?php esc_attr_e('Pause slideshow', POPUPS_NEKUDA_TEXT_DOMAIN); ?>" aria-pressed="false">
             <span class="popup__pause-icon popup__pause-icon--pause" aria-hidden="true">⏸</span>
             <span class="popup__pause-icon popup__pause-icon--play" aria-hidden="true">▶</span>
         </button>
@@ -59,8 +59,8 @@ $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['sli
                 <div class="popup__slide<?php echo $index === 0 ? ' is-active' : ''; ?>" 
                      data-index="<?php echo esc_attr($index); ?>"
                      role="group"
-                     aria-roledescription="<?php esc_attr_e('slide', PLUGIN_NAMESPACE); ?>"
-                     aria-label="<?php echo esc_attr(sprintf(__('Slide %1$d of %2$d', PLUGIN_NAMESPACE), $index + 1, count($data['slides_desktop']))); ?>">
+                     aria-roledescription="<?php esc_attr_e('slide', POPUPS_NEKUDA_TEXT_DOMAIN); ?>"
+                     aria-label="<?php echo esc_attr(sprintf(__('Slide %1$d of %2$d', POPUPS_NEKUDA_TEXT_DOMAIN), $index + 1, count($data['slides_desktop']))); ?>">
                     <?php echo wp_kses_post($slide); ?>
                 </div>
                 <?php endforeach; ?>
@@ -76,8 +76,8 @@ $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['sli
                 <div class="popup__slide<?php echo $index === 0 ? ' is-active' : ''; ?>" 
                      data-index="<?php echo esc_attr($index); ?>"
                      role="group"
-                     aria-roledescription="<?php esc_attr_e('slide', PLUGIN_NAMESPACE); ?>"
-                     aria-label="<?php echo esc_attr(sprintf(__('Slide %1$d of %2$d', PLUGIN_NAMESPACE), $index + 1, count($data['slides_mobile']))); ?>">
+                     aria-roledescription="<?php esc_attr_e('slide', POPUPS_NEKUDA_TEXT_DOMAIN); ?>"
+                     aria-label="<?php echo esc_attr(sprintf(__('Slide %1$d of %2$d', POPUPS_NEKUDA_TEXT_DOMAIN), $index + 1, count($data['slides_mobile']))); ?>">
                     <?php echo wp_kses_post($slide); ?>
                 </div>
                 <?php endforeach; ?>
