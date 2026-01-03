@@ -12,21 +12,21 @@ if (!defined('ABSPATH')) {
 class Admin {
 
     public function __construct() {
-        add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
-        add_action('save_post_nekuda_popup', [$this, 'save_meta']);
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
-        add_action('wp_ajax_popup_get_editor', [$this, 'ajax_get_editor']);
-        add_action('wp_ajax_popup_search_content', [$this, 'ajax_search_content']);
+        add_action('add_meta_boxes', [$this, 'registerMetaBoxes']);
+        add_action('save_post_nekuda_popup', [$this, 'saveMeta']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueueAdminAssets']);
+        add_action('wp_ajax_popup_get_editor', [$this, 'ajaxGetEditor']);
+        add_action('wp_ajax_popup_search_content', [$this, 'ajaxSearchContent']);
     }
 
     /**
      * Register all meta boxes
      */
-    public function register_meta_boxes(): void {
+    public function registerMetaBoxes(): void {
         add_meta_box(
             'popup_trigger_settings',
             __('Trigger Settings', POPUPS_NEKUDA_TEXT_DOMAIN),
-            [$this, 'render_trigger_settings'],
+            [$this, 'renderTriggerSettings'],
             'nekuda_popup',
             'normal',
             'high'
@@ -35,7 +35,7 @@ class Admin {
         add_meta_box(
             'popup_cookie_scheduling',
             __('Cookie & Scheduling', POPUPS_NEKUDA_TEXT_DOMAIN),
-            [$this, 'render_cookie_scheduling'],
+            [$this, 'renderCookieScheduling'],
             'nekuda_popup',
             'normal',
             'high'
@@ -44,7 +44,7 @@ class Admin {
         add_meta_box(
             'popup_display_constraints',
             __('Display Constraints', POPUPS_NEKUDA_TEXT_DOMAIN),
-            [$this, 'render_display_constraints'],
+            [$this, 'renderDisplayConstraints'],
             'nekuda_popup',
             'side',
             'default'
@@ -53,7 +53,7 @@ class Admin {
         add_meta_box(
             'popup_display_rules',
             __('Display Rules', POPUPS_NEKUDA_TEXT_DOMAIN),
-            [$this, 'render_display_rules'],
+            [$this, 'renderDisplayRules'],
             'nekuda_popup',
             'side',
             'default'
@@ -62,7 +62,7 @@ class Admin {
         add_meta_box(
             'popup_content',
             __('Popup Content', POPUPS_NEKUDA_TEXT_DOMAIN),
-            [$this, 'render_popup_content'],
+            [$this, 'renderPopupContent'],
             'nekuda_popup',
             'normal',
             'default'
@@ -72,7 +72,7 @@ class Admin {
     /**
      * Render Trigger Settings meta box
      */
-    public function render_trigger_settings(\WP_Post $post): void {
+    public function renderTriggerSettings(\WP_Post $post): void {
         wp_nonce_field('popup_save_meta', 'popup_meta_nonce');
 
         Fields::radio($post->ID, '_popup_trigger_type', [
@@ -95,7 +95,7 @@ class Admin {
     /**
      * Render Cookie & Scheduling meta box
      */
-    public function render_cookie_scheduling(\WP_Post $post): void {
+    public function renderCookieScheduling(\WP_Post $post): void {
         $cookie_key = Fields::get($post->ID, '_popup_cookie_key', '');
         if (empty($cookie_key) && $post->post_name) {
             $cookie_key = $post->post_name;
@@ -128,7 +128,7 @@ class Admin {
     /**
      * Render Display Constraints meta box
      */
-    public function render_display_constraints(\WP_Post $post): void {
+    public function renderDisplayConstraints(\WP_Post $post): void {
         Fields::text($post->ID, '_popup_max_width', [
             'label'   => __('Max Width (px)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
@@ -146,14 +146,14 @@ class Admin {
     /**
      * Render Display Rules meta box
      */
-    public function render_display_rules(\WP_Post $post): void {
-        Fields::select2_multi($post->ID, '_popup_include', [
+    public function renderDisplayRules(\WP_Post $post): void {
+        Fields::select2Multi($post->ID, '_popup_include', [
             'label'       => __('Include', POPUPS_NEKUDA_TEXT_DOMAIN),
             'description' => __('Leave empty to show on all pages', POPUPS_NEKUDA_TEXT_DOMAIN),
             'placeholder' => __('Search pages, posts, categories...', POPUPS_NEKUDA_TEXT_DOMAIN),
         ]);
 
-        Fields::select2_multi($post->ID, '_popup_exclude', [
+        Fields::select2Multi($post->ID, '_popup_exclude', [
             'label'       => __('Exclude', POPUPS_NEKUDA_TEXT_DOMAIN),
             'description' => __('Hide popup on these pages', POPUPS_NEKUDA_TEXT_DOMAIN),
             'placeholder' => __('Search pages, posts, categories...', POPUPS_NEKUDA_TEXT_DOMAIN),
@@ -163,47 +163,49 @@ class Admin {
     /**
      * Render unified Popup Content meta box with tabs
      */
-    public function render_popup_content(\WP_Post $post): void {
+    public function renderPopupContent(\WP_Post $post): void {
         $mobile_slides = Fields::get($post->ID, '_popup_slides_mobile', []);
         $has_mobile_content = !empty($mobile_slides) && is_array($mobile_slides);
         
         ?>
-        <div class="popup-content-tabs">
-            <div class="popup-tabs-nav">
-                <button type="button" class="popup-tab-btn is-active" data-tab="desktop">
-                    <span class="dashicons dashicons-desktop"></span>
-                    <?php _e('Desktop', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
-                </button>
-                <button type="button" class="popup-tab-btn" data-tab="mobile">
-                    <span class="dashicons dashicons-smartphone"></span>
-                    <?php _e('Mobile', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
-                    <?php if (!$has_mobile_content): ?>
-                        <span class="popup-tab-sync" title="<?php esc_attr_e('Using desktop content', POPUPS_NEKUDA_TEXT_DOMAIN); ?>">↔</span>
-                    <?php endif; ?>
-                </button>
-            </div>
-            
-            <div class="popup-tabs-content">
-                <div class="popup-tab-panel is-active" data-panel="desktop">
-                    <?php $this->render_slides_repeater($post->ID, '_popup_slides_desktop', 'desktop'); ?>
-                </div>
-                
-                <div class="popup-tab-panel" data-panel="mobile">
-                    <div class="popup-mobile-notice <?php echo $has_mobile_content ? 'is-hidden' : ''; ?>">
-                        <span class="dashicons dashicons-info"></span>
-                        <p><?php _e('Currently using desktop slides on mobile. Add slides below to customize the mobile experience.', POPUPS_NEKUDA_TEXT_DOMAIN); ?></p>
-                    </div>
-                    <?php $this->render_slides_repeater($post->ID, '_popup_slides_mobile', 'mobile'); ?>
-                </div>
-            </div>
+<div class="popup-content-tabs">
+    <div class="popup-tabs-nav">
+        <button type="button" class="popup-tab-btn is-active" data-tab="desktop">
+            <span class="dashicons dashicons-desktop"></span>
+            <?php _e('Desktop', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
+        </button>
+        <button type="button" class="popup-tab-btn" data-tab="mobile">
+            <span class="dashicons dashicons-smartphone"></span>
+            <?php _e('Mobile', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
+            <?php if (!$has_mobile_content): ?>
+            <span class="popup-tab-sync"
+                title="<?php esc_attr_e('Using desktop content', POPUPS_NEKUDA_TEXT_DOMAIN); ?>">↔</span>
+            <?php endif; ?>
+        </button>
+    </div>
+
+    <div class="popup-tabs-content">
+        <div class="popup-tab-panel is-active" data-panel="desktop">
+            <?php $this->renderSlidesRepeater($post->ID, '_popup_slides_desktop', 'desktop'); ?>
         </div>
-        <?php
+
+        <div class="popup-tab-panel" data-panel="mobile">
+            <div class="popup-mobile-notice <?php echo $has_mobile_content ? 'is-hidden' : ''; ?>">
+                <span class="dashicons dashicons-info"></span>
+                <p><?php _e('Currently using desktop slides on mobile. Add slides below to customize the mobile experience.', POPUPS_NEKUDA_TEXT_DOMAIN); ?>
+                </p>
+            </div>
+            <?php $this->renderSlidesRepeater($post->ID, '_popup_slides_mobile', 'mobile'); ?>
+        </div>
+    </div>
+</div>
+<?php
     }
 
     /**
      * Render slides repeater UI
      */
-    private function render_slides_repeater(int $post_id, string $key, string $type): void {
+    private function renderSlidesRepeater(int $post_id, string $key, string $type): void {
         $slides = Fields::get($post_id, $key, []);
         if (!is_array($slides)) {
             $slides = [];
@@ -213,10 +215,10 @@ class Admin {
         echo '<div class="popup-slides-list">';
 
         if (empty($slides)) {
-            $this->render_single_slide($key, 0, '');
+            $this->renderSingleSlide($key, 0, '');
         } else {
             foreach ($slides as $index => $content) {
-                $this->render_single_slide($key, $index, $content);
+                $this->renderSingleSlide($key, $index, $content);
             }
         }
 
@@ -228,7 +230,7 @@ class Admin {
     /**
      * Render a single slide with wp_editor
      */
-    private function render_single_slide(string $key, int $index, string $content): void {
+    private function renderSingleSlide(string $key, int $index, string $content): void {
         // Create a clean editor ID (TinyMCE has issues with IDs starting with underscore)
         $editor_id = 'popup_editor_' . str_replace('_popup_slides_', '', $key) . '_' . $index;
         $field_name = $key . '[' . $index . ']';
@@ -255,7 +257,7 @@ class Admin {
     /**
      * AJAX handler to get a new wp_editor instance
      */
-    public function ajax_get_editor(): void {
+    public function ajaxGetEditor(): void {
         check_ajax_referer('popup_admin_nonce', 'nonce');
 
         $key = sanitize_text_field($_POST['key'] ?? '');
@@ -305,97 +307,119 @@ class Admin {
 
     /**
      * AJAX handler for Select2 content search
-     * 
+     *
      * Returns grouped results (ACF-style) for better organization:
      * - Special (Homepage, Blog)
      * - Post Types (All Pages, All Posts, etc.)
      * - Specific posts grouped by type
      * - Taxonomy terms grouped by taxonomy
      */
-    public function ajax_search_content(): void {
+    public function ajaxSearchContent(): void {
         check_ajax_referer('popup_admin_nonce', 'nonce');
 
         $search = sanitize_text_field($_GET['q'] ?? '');
         $groups = [];
 
-        // Group: Special Pages
-        $special_children = [];
-        if (empty($search) || stripos('homepage', $search) !== false || stripos('home', $search) !== false) {
-            $special_children[] = [
+        $this->addSpecialPagesGroup($groups, $search);
+        $this->addPostTypesGroup($groups, $search);
+        $this->addSpecificPostsGroups($groups, $search);
+        $this->addTaxonomyTermsGroups($groups, $search);
+
+        wp_send_json(['results' => $groups]);
+    }
+
+    /**
+     * Add special pages group to search results
+     */
+    private function addSpecialPagesGroup(array &$groups, string $search): void {
+        $children = [];
+
+        if ($this->matchesSearch($search, ['homepage', 'home'])) {
+            $children[] = [
                 'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_HOME),
                 'text' => __('Homepage', POPUPS_NEKUDA_TEXT_DOMAIN),
             ];
         }
-        if (empty($search) || stripos('blog', $search) !== false) {
-            $special_children[] = [
+
+        if ($this->matchesSearch($search, ['blog'])) {
+            $children[] = [
                 'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_SPECIAL, DisplayRules::SPECIAL_BLOG),
                 'text' => __('Blog Page', POPUPS_NEKUDA_TEXT_DOMAIN),
             ];
         }
-        if (!empty($special_children)) {
-            $groups[] = [
-                'text'     => __('Special', POPUPS_NEKUDA_TEXT_DOMAIN),
-                'children' => $special_children,
-            ];
-        }
 
-        // Group: Post Types ("All X")
-        $post_types = get_post_types(['public' => true], 'objects');
-        $type_children = [];
-        foreach ($post_types as $post_type) {
-            if ($post_type->name === 'attachment') {
+        if (!empty($children)) {
+            $groups[] = ['text' => __('Special', POPUPS_NEKUDA_TEXT_DOMAIN), 'children' => $children];
+        }
+    }
+
+    /**
+     * Add post types group to search results
+     */
+    private function addPostTypesGroup(array &$groups, string $search): void {
+        $postTypes = get_post_types(['public' => true], 'objects');
+        $children = [];
+
+        foreach ($postTypes as $postType) {
+            if ($postType->name === 'attachment') {
                 continue;
             }
 
-            $type_name = $post_type->labels->name;
-            if (empty($search) || stripos($type_name, $search) !== false || stripos('all', $search) !== false) {
-                $type_children[] = [
-                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST_TYPE, $post_type->name),
-                    'text' => sprintf(__('All %s', POPUPS_NEKUDA_TEXT_DOMAIN), $type_name),
+            $typeName = $postType->labels->name;
+            if ($this->matchesSearch($search, [$typeName, 'all'])) {
+                $children[] = [
+                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST_TYPE, $postType->name),
+                    'text' => sprintf(__('All %s', POPUPS_NEKUDA_TEXT_DOMAIN), $typeName),
                 ];
             }
         }
-        if (!empty($type_children)) {
-            $groups[] = [
-                'text'     => __('Post Types', POPUPS_NEKUDA_TEXT_DOMAIN),
-                'children' => $type_children,
+
+        if (!empty($children)) {
+            $groups[] = ['text' => __('Post Types', POPUPS_NEKUDA_TEXT_DOMAIN), 'children' => $children];
+        }
+    }
+
+    /**
+     * Add specific posts groups to search results
+     */
+    private function addSpecificPostsGroups(array &$groups, string $search): void {
+        if (empty($search)) {
+            return;
+        }
+
+        $postTypes = get_post_types(['public' => true], 'objects');
+        $posts = get_posts([
+            'post_type'      => array_keys($postTypes),
+            'post_status'    => 'publish',
+            's'              => $search,
+            'posts_per_page' => 30,
+            'orderby'        => 'relevance',
+        ]);
+
+        $postsByType = [];
+        foreach ($posts as $post) {
+            if ($post->post_type === 'attachment') {
+                continue;
+            }
+            $postsByType[$post->post_type][] = [
+                'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST, $post->ID),
+                'text' => $post->post_title,
             ];
         }
 
-        // Groups: Specific Posts (grouped by post type)
-        if (!empty($search)) {
-            $posts = get_posts([
-                'post_type'      => array_keys($post_types),
-                'post_status'    => 'publish',
-                's'              => $search,
-                'posts_per_page' => 30,
-                'orderby'        => 'relevance',
-            ]);
-
-            // Group posts by their type
-            $posts_by_type = [];
-            foreach ($posts as $post) {
-                if ($post->post_type === 'attachment') {
-                    continue;
-                }
-                $posts_by_type[$post->post_type][] = [
-                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_POST, $post->ID),
-                    'text' => $post->post_title,
-                ];
-            }
-
-            foreach ($posts_by_type as $type => $items) {
-                $type_obj = get_post_type_object($type);
-                $label = $type_obj ? $type_obj->labels->name : ucfirst($type);
-                $groups[] = [
-                    'text'     => $label,
-                    'children' => $items,
-                ];
-            }
+        foreach ($postsByType as $type => $items) {
+            $typeObj = get_post_type_object($type);
+            $label = $typeObj ? $typeObj->labels->name : ucfirst($type);
+            $groups[] = ['text' => $label, 'children' => $items];
         }
+    }
 
-        // Groups: Taxonomy Terms (grouped by taxonomy)
+    /**
+     * Add taxonomy terms groups to search results
+     */
+    private function addTaxonomyTermsGroups(array &$groups, string $search): void {
         $taxonomies = get_taxonomies(['public' => true], 'objects');
+
         foreach ($taxonomies as $taxonomy) {
             $terms = get_terms([
                 'taxonomy'   => $taxonomy->name,
@@ -408,29 +432,38 @@ class Admin {
                 continue;
             }
 
-            $term_children = [];
-            foreach ($terms as $term) {
-                $term_children[] = [
-                    'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_TERM, $taxonomy->name, $term->term_id),
-                    'text' => $term->name,
-                ];
-            }
+            $children = array_map(fn($term) => [
+                'id'   => DisplayRules::make_rule(DisplayRules::PREFIX_TERM, $taxonomy->name, $term->term_id),
+                'text' => $term->name,
+            ], $terms);
 
-            if (!empty($term_children)) {
-                $groups[] = [
-                    'text'     => $taxonomy->labels->name,
-                    'children' => $term_children,
-                ];
+            if (!empty($children)) {
+                $groups[] = ['text' => $taxonomy->labels->name, 'children' => $children];
+            }
+        }
+    }
+
+    /**
+     * Check if search term matches any of the given keywords
+     */
+    private function matchesSearch(string $search, array $keywords): bool {
+        if (empty($search)) {
+            return true;
+        }
+
+        foreach ($keywords as $keyword) {
+            if (stripos($keyword, $search) !== false) {
+                return true;
             }
         }
 
-        wp_send_json(['results' => $groups]);
+        return false;
     }
 
     /**
      * Save meta fields
      */
-    public function save_meta(int $post_id): void {
+    public function saveMeta(int $post_id): void {
         if (!isset($_POST['popup_meta_nonce']) || !wp_verify_nonce($_POST['popup_meta_nonce'], 'popup_save_meta')) {
             return;
         }
@@ -474,29 +507,27 @@ class Admin {
         Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
 
         // Display rules (include/exclude)
-        $include = $this->sanitize_display_rules($_POST['_popup_include'] ?? []);
+        $include = $this->sanitizeDisplayRules($_POST['_popup_include'] ?? []);
         Fields::save($post_id, '_popup_include', $include);
 
-        $exclude = $this->sanitize_display_rules($_POST['_popup_exclude'] ?? []);
+        $exclude = $this->sanitizeDisplayRules($_POST['_popup_exclude'] ?? []);
         Fields::save($post_id, '_popup_exclude', $exclude);
 
         // Desktop slides
         $raw_desktop = isset($_POST['_popup_slides_desktop']) ? $_POST['_popup_slides_desktop'] : [];
-        
-        $slides_desktop = $this->sanitize_slides($raw_desktop);
-        
+        $slides_desktop = $this->sanitizeSlides($raw_desktop);
         Fields::save($post_id, '_popup_slides_desktop', $slides_desktop);
 
         // Mobile slides
         $raw_mobile = isset($_POST['_popup_slides_mobile']) ? $_POST['_popup_slides_mobile'] : [];
-        $slides_mobile = $this->sanitize_slides($raw_mobile);
+        $slides_mobile = $this->sanitizeSlides($raw_mobile);
         Fields::save($post_id, '_popup_slides_mobile', $slides_mobile);
     }
 
     /**
      * Sanitize slides array
      */
-    private function sanitize_slides($slides): array {
+    private function sanitizeSlides($slides): array {
         if (!is_array($slides)) {
             return [];
         }
@@ -518,18 +549,18 @@ class Admin {
 
     /**
      * Sanitize display rules array
-     * 
+     *
      * Valid formats:
      * - special:home
      * - special:blog
      * - post:123
      * - post_type:car
      * - term:category:5
-     * 
+     *
      * @param mixed $rules Raw input from form
-     * @return array Sanitized array of rule strings
+     * @return string[] Sanitized array of rule strings
      */
-    private function sanitize_display_rules($rules): array {
+    private function sanitizeDisplayRules($rules): array {
         if (!is_array($rules)) {
             return [];
         }
@@ -569,7 +600,7 @@ class Admin {
     /**
      * Enqueue admin styles and scripts
      */
-    public function enqueue_admin_assets(string $hook): void {
+    public function enqueueAdminAssets(string $hook): void {
         global $post_type;
 
         if ($post_type !== 'nekuda_popup') {
@@ -626,16 +657,16 @@ class Admin {
         }
 
         // Inline script for trigger type toggle
-        wp_add_inline_script('jquery', $this->get_trigger_toggle_script());
+        wp_add_inline_script('jquery', $this->getTriggerToggleScript());
 
         // Inline script for Select2 initialization
-        wp_add_inline_script('select2', $this->get_select2_init_script(), 'after');
+        wp_add_inline_script('select2', $this->getSelect2InitScript(), 'after');
     }
 
     /**
      * Get inline script for trigger type visibility toggle
      */
-    private function get_trigger_toggle_script(): string {
+    private function getTriggerToggleScript(): string {
         return <<<'JS'
 (function($) {
     function updateTriggerVisibility() {
@@ -652,10 +683,10 @@ JS;
 
     /**
      * Get inline script for Select2 initialization
-     * 
+     *
      * Results are grouped (ACF-style) with optgroups for better organization
      */
-    private function get_select2_init_script(): string {
+    private function getSelect2InitScript(): string {
         return <<<'JS'
 (function($) {
     $(document).ready(function() {

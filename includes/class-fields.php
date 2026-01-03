@@ -71,12 +71,12 @@ class Fields {
 
     /**
      * Render a Select2 multi-select field with AJAX search
-     * 
+     *
      * @param int    $post_id Post ID
      * @param string $key     Meta key
      * @param array  $args    Field arguments
      */
-    public static function select2_multi(int $post_id, string $key, array $args = []): void {
+    public static function select2Multi(int $post_id, string $key, array $args = []): void {
         $values = self::get($post_id, $key, []);
         if (!is_array($values)) {
             $values = [];
@@ -96,8 +96,8 @@ class Fields {
 
         // Render pre-selected options
         foreach ($values as $value) {
-            $label_text = self::get_rule_label($value);
-            echo '<option value="' . esc_attr($value) . '" selected="selected">' . esc_html($label_text) . '</option>';
+            $labelText = self::getRuleLabel($value);
+            echo '<option value="' . esc_attr($value) . '" selected="selected">' . esc_html($labelText) . '</option>';
         }
 
         echo '</select>';
@@ -111,64 +111,86 @@ class Fields {
 
     /**
      * Get human-readable label for a rule value
-     * 
+     *
      * @param string $value Rule value (e.g., 'post:42', 'term:category:5')
      * @return string Human-readable label
      */
-    public static function get_rule_label(string $value): string {
+    public static function getRuleLabel(string $value): string {
         $parsed = DisplayRules::parse_rule($value);
         $prefix = $parsed['prefix'];
         $parts = $parsed['parts'];
 
-        // Special pages
-        if ($prefix === DisplayRules::PREFIX_SPECIAL) {
-            $page = $parts[0] ?? '';
-            if ($page === DisplayRules::SPECIAL_HOME) {
-                return __('Homepage', POPUPS_NEKUDA_TEXT_DOMAIN);
-            }
-            if ($page === DisplayRules::SPECIAL_BLOG) {
-                return __('Blog Page', POPUPS_NEKUDA_TEXT_DOMAIN);
-            }
-            return $value;
-        }
+        $labelResolvers = [
+            DisplayRules::PREFIX_SPECIAL => fn() => self::getSpecialPageLabel($parts[0] ?? '', $value),
+            DisplayRules::PREFIX_POST_TYPE => fn() => self::getPostTypeLabel($parts[0] ?? '', $value),
+            DisplayRules::PREFIX_POST => fn() => self::getPostLabel((int)($parts[0] ?? 0)),
+            DisplayRules::PREFIX_TERM => fn() => self::getTermLabel($parts, $value),
+        ];
 
-        // Post type
-        if ($prefix === DisplayRules::PREFIX_POST_TYPE) {
-            $type = $parts[0] ?? '';
-            $post_type_obj = get_post_type_object($type);
-            if ($post_type_obj) {
-                return sprintf(__('All %s', POPUPS_NEKUDA_TEXT_DOMAIN), $post_type_obj->labels->name);
-            }
-            return $value;
-        }
+        $resolver = $labelResolvers[$prefix] ?? null;
 
-        // Specific post
-        if ($prefix === DisplayRules::PREFIX_POST) {
-            $id = (int) ($parts[0] ?? 0);
-            $post = get_post($id);
-            if ($post) {
-                $type_obj = get_post_type_object($post->post_type);
-                $type_label = $type_obj ? $type_obj->labels->singular_name : $post->post_type;
-                return sprintf('%s (%s)', $post->post_title, $type_label);
-            }
+        return $resolver ? $resolver() : $value;
+    }
+
+    /**
+     * Get label for special page rule
+     */
+    private static function getSpecialPageLabel(string $page, string $fallback): string {
+        $labels = [
+            DisplayRules::SPECIAL_HOME => __('Homepage', POPUPS_NEKUDA_TEXT_DOMAIN),
+            DisplayRules::SPECIAL_BLOG => __('Blog Page', POPUPS_NEKUDA_TEXT_DOMAIN),
+        ];
+
+        return $labels[$page] ?? $fallback;
+    }
+
+    /**
+     * Get label for post type rule
+     */
+    private static function getPostTypeLabel(string $type, string $fallback): string {
+        $postTypeObj = get_post_type_object($type);
+
+        return $postTypeObj
+            ? sprintf(__('All %s', POPUPS_NEKUDA_TEXT_DOMAIN), $postTypeObj->labels->name)
+            : $fallback;
+    }
+
+    /**
+     * Get label for specific post rule
+     */
+    private static function getPostLabel(int $id): string {
+        $post = get_post($id);
+
+        if (!$post) {
             return sprintf(__('Post #%d', POPUPS_NEKUDA_TEXT_DOMAIN), $id);
         }
 
-        // Taxonomy term
-        if ($prefix === DisplayRules::PREFIX_TERM) {
-            if (count($parts) === 2) {
-                $taxonomy = $parts[0];
-                $term_id = (int) $parts[1];
-                $term = get_term($term_id, $taxonomy);
-                if ($term && !is_wp_error($term)) {
-                    $tax_obj = get_taxonomy($taxonomy);
-                    $tax_label = $tax_obj ? $tax_obj->labels->singular_name : $taxonomy;
-                    return sprintf('%s (%s)', $term->name, $tax_label);
-                }
-            }
-            return $value;
+        $typeObj = get_post_type_object($post->post_type);
+        $typeLabel = $typeObj ? $typeObj->labels->singular_name : $post->post_type;
+
+        return sprintf('%s (%s)', $post->post_title, $typeLabel);
+    }
+
+    /**
+     * Get label for taxonomy term rule
+     */
+    private static function getTermLabel(array $parts, string $fallback): string {
+        if (count($parts) !== 2) {
+            return $fallback;
         }
 
-        return $value;
+        $taxonomy = $parts[0];
+        $termId = (int)$parts[1];
+        $term = get_term($termId, $taxonomy);
+
+        if (!$term || is_wp_error($term)) {
+            return $fallback;
+        }
+
+        $taxObj = get_taxonomy($taxonomy);
+        $taxLabel = $taxObj ? $taxObj->labels->singular_name : $taxonomy;
+
+        return sprintf('%s (%s)', $term->name, $taxLabel);
     }
 }
+

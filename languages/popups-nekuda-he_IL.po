@@ -60,84 +60,94 @@ msgid "No popups found in Trash"
 msgstr "לא נמצאו פופאפים בפח"
 
 #: includes/class-admin.php:28
+#. When to trigger/show the popup
 msgid "Trigger Settings"
-msgstr "הגדרות הפעלה"
+msgstr "מתי להציג"
 
 #: includes/class-admin.php:37
+#. Cookie remembers if user saw it, scheduling controls dates
 msgid "Cookie & Scheduling"
-msgstr "עוגיות ותזמון"
+msgstr "תזמון ותדירות"
 
 #: includes/class-admin.php:46
+#. Size constraints for the popup
 msgid "Display Constraints"
-msgstr "הגבלות תצוגה"
+msgstr "גודל הפופאפ"
 
 #: includes/class-admin.php:55
+#. Rules for which pages to show/hide
 msgid "Display Rules"
-msgstr "כללי תצוגה"
+msgstr "באילו דפים להציג"
 
 #: includes/class-admin.php:64
 msgid "Popup Content"
-msgstr "תוכן פופאפ"
+msgstr "תוכן הפופאפ"
 
 #: includes/class-admin.php:79
+#. Shows when user moves mouse toward closing the tab/window
 msgid "Exit Intent"
-msgstr "כוונת יציאה"
+msgstr "כשהגולש עוזב"
 
 #: includes/class-admin.php:80
+#. Shows after X seconds delay
 msgid "Timeout"
-msgstr "זמן המתנה"
+msgstr "לאחר השהיה"
 
 #: includes/class-admin.php:82
 msgid "Trigger Type"
-msgstr "סוג הפעלה"
+msgstr "מתי יופיע"
 
 #: includes/class-admin.php:87
 msgid "Timeout (seconds)"
-msgstr "זמן המתנה (שניות)"
+msgstr "השהיה (שניות)"
 
 #: includes/class-admin.php:105
+#. Identifier to remember if user already saw this popup
 msgid "Cookie Key"
-msgstr "מפתח עוגייה"
+msgstr "מזהה לזכירה"
 
 #: includes/class-admin.php:111
+#. How long to remember the user saw this (don't show again for X days)
 msgid "Cookie Expiry (days)"
-msgstr "תפוגת עוגייה (ימים)"
+msgstr "אל תציג שוב למשך (ימים)"
 
 #: includes/class-admin.php:118
 msgid "Schedule Start Date (optional)"
-msgstr "תאריך התחלה (אופציונלי)"
+msgstr "התחל להציג מתאריך (אופציונלי)"
 
 #: includes/class-admin.php:123
 msgid "Schedule End Date (optional)"
-msgstr "תאריך סיום (אופציונלי)"
+msgstr "הפסק להציג בתאריך (אופציונלי)"
 
 #: includes/class-admin.php:133
 msgid "Max Width (px)"
-msgstr "רוחב מקסימלי (פיקסלים)"
+msgstr "רוחב מרבי (פיקסלים)"
 
 #: includes/class-admin.php:140
 msgid "Max Height (px or empty for auto)"
-msgstr "גובה מקסימלי (פיקסלים או ריק לאוטומטי)"
+msgstr "גובה מרבי (השאר ריק לגובה אוטומטי)"
 
 #: includes/class-admin.php:151
+#. Pages where popup WILL show
 msgid "Include"
-msgstr "כלול"
+msgstr "הצג בדפים אלה"
 
 #: includes/class-admin.php:152
 msgid "Leave empty to show on all pages"
-msgstr "השאר ריק להצגה בכל הדפים"
+msgstr "השאר ריק להצגה בכל האתר"
 
 #: includes/class-admin.php:153 includes/class-admin.php:159
 msgid "Search pages, posts, categories..."
 msgstr "חפש דפים, פוסטים, קטגוריות..."
 
 #: includes/class-admin.php:157
+#. Pages where popup will NOT show
 msgid "Exclude"
-msgstr "החרג"
+msgstr "אל תציג בדפים אלה"
 
 #: includes/class-admin.php:158
 msgid "Hide popup on these pages"
-msgstr "הסתר פופאפ בדפים אלה"
+msgstr "הפופאפ לא יופיע בדפים אלה"
 
 #: includes/class-admin.php:175
 msgid "Desktop"
@@ -148,12 +158,13 @@ msgid "Mobile"
 msgstr "נייד"
 
 #: includes/class-admin.php:181
+#. Indicator that mobile is using the same content as desktop
 msgid "Using desktop content"
-msgstr "משתמש בתוכן מחשב"
+msgstr "זהה למחשב"
 
 #: includes/class-admin.php:194
 msgid "Currently using desktop slides on mobile. Add slides below to customize the mobile experience."
-msgstr "כרגע משתמש בשקפים של מחשב בנייד. הוסף שקפים למטה להתאמה אישית של חוויית הנייד."
+msgstr "כרגע מוצג אותו תוכן בנייד ובמחשב. הוסף שקפים למטה להצגת תוכן שונה בנייד."
 
 #: includes/class-admin.php:224
 msgid "Add Slide"
@@ -170,15 +181,16 @@ msgstr "הסר"
 
 #: includes/class-admin.php:326 includes/class-fields.php:127
 msgid "Homepage"
-msgstr "דף הבית"
+msgstr "עמוד הבית"
 
 #: includes/class-admin.php:332 includes/class-fields.php:130
 msgid "Blog Page"
 msgstr "עמוד הבלוג"
 
 #: includes/class-admin.php:337
+#. Group name for Homepage and Blog Page
 msgid "Special"
-msgstr "מיוחד"
+msgstr "דפים מיוחדים"
 
 #: includes/class-admin.php:354 includes/class-fields.php:140
 #, php-format
@@ -187,7 +199,7 @@ msgstr "כל ה%s"
 
 #: includes/class-admin.php:360
 msgid "Post Types"
-msgstr "סוגי פוסטים"
+msgstr "סוגי תוכן"
 
 #: includes/class-fields.php:87
 msgid "Search..."
@@ -196,15 +208,15 @@ msgstr "חיפוש..."
 #: includes/class-fields.php:154
 #, php-format
 msgid "Post #%d"
-msgstr "פוסט #%d"
+msgstr "תוכן #%d"
 
 #: templates/popup.php:36
 msgid "Close popup"
-msgstr "סגור פופאפ"
+msgstr "סגור"
 
 #: templates/popup.php:41 templates/popup.php:48
 msgid "Pause slideshow"
-msgstr "עצור מצגת"
+msgstr "השהה"
 
 #: templates/popup.php:62 templates/popup.php:79
 msgid "slide"
@@ -214,4 +226,3 @@ msgstr "שקף"
 #, php-format
 msgid "Slide %1$d of %2$d"
 msgstr "שקף %1$d מתוך %2$d"
-
