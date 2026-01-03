@@ -92,7 +92,6 @@ class Frontend {
 
     /**
      * Check if popup passes display rules for current page
-     * 
      * @param \WP_Post $popup   The popup post
      * @param array    $context Current page context from DisplayRules::build_context()
      * @return bool
@@ -142,7 +141,7 @@ class Frontend {
             return;
         }
 
-        include POPUPS_NEKUDA_DIR . 'templates/popup.php';
+        include_once POPUPS_NEKUDA_DIR . 'templates/popup.php';
     }
 
     /**

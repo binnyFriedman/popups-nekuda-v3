@@ -1,386 +1,441 @@
 /// <reference path="./types/wordpress.d.ts" />
 
-// Timing constants (in milliseconds)
-const WP_SCRIPT_INIT_DELAY_MS = 100;   // Allow WP scripts to register TinyMCE plugins
-const TINYMCE_READY_DELAY_MS = 1000;   // Wait for TinyMCE editors to fully render
-const DOM_RENDER_DELAY_MS = 500;       // Allow DOM updates before sync status check
+const WP_SCRIPT_INIT_DELAY_MS = 100;
+const TINYMCE_READY_DELAY_MS = 1000;
+const DOM_RENDER_DELAY_MS = 500;
+const NOTICE_AUTO_DISMISS_MS = 5000;
 
-(function($: any) {
-    'use strict';
+const BUTTON_TEXT = {
+    ADD_SLIDE: 'Add Slide',
+    ADDING: 'Adding...',
+} as const;
 
-    const NOTICE_AUTO_DISMISS_MS = 5000;
+type NoticeType = 'error' | 'warning' | 'success';
 
-    /**
-     * Show a WordPress-style admin notice
-     */
-    function showAdminNotice(message: string, type: 'error' | 'warning' | 'success' = 'error'): void {
-        const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
-        
-        // Insert after the page title
-        const $heading = $('.wrap h1').first();
-        if ($heading.length) {
-            $heading.after($notice);
-        } else {
-            // Fallback: prepend to .wrap
-            $('.wrap').prepend($notice);
+function showAdminNotice(message: string, type: NoticeType = 'error'): void {
+    const notice = document.createElement('div');
+    notice.className = `notice notice-${type} is-dismissible`;
+    notice.innerHTML = `<p>${message}</p>`;
+
+    const heading = document.querySelector('.wrap h1');
+    if (heading) {
+        heading.insertAdjacentElement('afterend', notice);
+    } else {
+        document.querySelector('.wrap')?.prepend(notice);
+    }
+
+    setTimeout(() => {
+        notice.style.transition = 'opacity 300ms';
+        notice.style.opacity = '0';
+        setTimeout(() => notice.remove(), 300);
+    }, NOTICE_AUTO_DISMISS_MS);
+}
+
+function getSlideKey(type: string): string {
+    return type === 'desktop' ? '_popup_slides_desktop' : '_popup_slides_mobile';
+}
+
+function initSlidesRepeater(): void {
+    document.querySelectorAll<HTMLElement>('.popup-slides-repeater').forEach((repeater) => {
+        const list = repeater.querySelector<HTMLElement>('.popup-slides-list');
+        const addBtn = repeater.querySelector<HTMLButtonElement>('.popup-add-slide');
+        const type = repeater.dataset.type ?? '';
+
+        if (list && addBtn) {
+            setupAddSlideButton(addBtn, list, type);
+            bindExistingRemoveButtons(list);
         }
+    });
+}
 
-        // Auto-dismiss after delay
-        setTimeout(() => {
-            $notice.fadeOut(300, () => $notice.remove());
-        }, NOTICE_AUTO_DISMISS_MS);
-    }
+function setupAddSlideButton(
+    addBtn: HTMLButtonElement,
+    list: HTMLElement,
+    type: string
+): void {
+    const key = getSlideKey(type);
 
-    function initSlidesRepeater(): void {
-        $('.popup-slides-repeater').each(function(this: HTMLElement) {
-            const $repeater = $(this);
-            const $list = $repeater.find('.popup-slides-list');
-            const $addBtn = $repeater.find('.popup-add-slide');
-            const type = $repeater.data('type');
-            const key = type === 'desktop' ? '_popup_slides_desktop' : '_popup_slides_mobile';
+    addBtn.addEventListener('click', async () => {
+        const newIndex = list.querySelectorAll('.popup-slide-item').length;
 
-            // Add slide via AJAX
-            $addBtn.on('click', function() {
-                const currentCount = $list.find('.popup-slide-item').length;
-                const newIndex = currentCount;
+        addBtn.disabled = true;
+        addBtn.textContent = BUTTON_TEXT.ADDING;
 
-                $addBtn.prop('disabled', true).text('Adding...');
+        try {
+            const formData = new FormData();
+            formData.append('action', 'popup_get_editor');
+            formData.append('nonce', popupAdmin.nonce);
+            formData.append('key', key);
+            formData.append('index', String(newIndex));
 
-                $.post(popupAdmin.ajaxUrl, {
-                    action: 'popup_get_editor',
-                    nonce: popupAdmin.nonce,
-                    key: key,
-                    index: newIndex
-                }, function(response: any) {
-                    if (response.success) {
-                        const $newSlide = $(response.data.html);
-                        $list.append($newSlide);
-
-                        // Execute the WordPress editor scripts if provided
-                        if (response.data.scripts) {
-                            // Create scripts via DOM for safer execution than eval()
-                            const scriptContainer = document.createElement('div');
-                            scriptContainer.innerHTML = response.data.scripts;
-                            const scripts = scriptContainer.querySelectorAll('script');
-                            scripts.forEach((oldScript) => {
-                                const newScript = document.createElement('script');
-                                newScript.textContent = oldScript.textContent;
-                                document.body.appendChild(newScript);
-                                document.body.removeChild(newScript);
-                            });
-                        }
-
-                        // Initialize TinyMCE for new editor (match PHP's ID format)
-                        const editorId = 'popup_editor_' + type + '_' + newIndex;
-                        
-                        // Small delay to let WordPress scripts execute first
-                        setTimeout(function() {
-                            // Only init if WordPress didn't already do it
-                            if (!tinymce.get(editorId)) {
-                                initTinyMCE(editorId);
-                            } else {
-                                // Add our change handler to the existing editor
-                                const editor = tinymce.get(editorId);
-                                if (editor) {
-                                    editor.on('change keyup', function() {
-                                        editor.save();
-                                    });
-                                }
-                            }
-                        }, WP_SCRIPT_INIT_DELAY_MS);
-
-                        updateSlideNumbers($list);
-                        bindRemoveButton($newSlide);
-                        
-                        // Update mobile sync status when adding slides
-                        if (type === 'mobile') {
-                            updateMobileSyncStatus();
-                        }
-                    }
-                    $addBtn.prop('disabled', false).text('Add Slide');
-                }).fail(function() {
-                    $addBtn.prop('disabled', false).text('Add Slide');
-                    showAdminNotice('Failed to add slide. Please try again.');
-                });
+            const response = await fetch(popupAdmin.ajaxUrl, {
+                method: 'POST',
+                body: formData,
             });
 
-            // Bind remove buttons for existing slides
-            $list.find('.popup-slide-item').each(function(this: HTMLElement) {
-                bindRemoveButton($(this));
-            });
-        });
-    }
+            const data: { success: boolean; data: { html: string; scripts?: string } } = await response.json();
 
-    function bindRemoveButton($slide: any): void {
-        $slide.find('.popup-remove-slide').on('click', function(this: HTMLElement) {
-            const $list = $slide.closest('.popup-slides-list');
-            const slideCount = $list.find('.popup-slide-item').length;
-
-            if (slideCount <= 1) {
-                showAdminNotice('You must have at least one slide.', 'warning');
+            if (!data.success) {
                 return;
             }
 
-            // Remove TinyMCE instance before removing DOM
-            const editorId = $slide.find('textarea').attr('id');
-            if (editorId && typeof tinymce !== 'undefined') {
-                const editor = tinymce.get(editorId);
-                if (editor) {
-                    editor.remove();
-                }
+            const template = document.createElement('template');
+            template.innerHTML = data.data.html.trim();
+            const newSlide = template.content.firstElementChild as HTMLElement;
+
+            list.appendChild(newSlide);
+
+            if (data.data.scripts) {
+                executeScripts(data.data.scripts);
             }
 
-            $slide.remove();
-            updateSlideNumbers($list);
-            reindexSlides($list);
-            
-            // Update mobile sync status when removing slides
-            const $repeater = $list.closest('.popup-slides-repeater');
-            if ($repeater.data('type') === 'mobile') {
+            initNewSlideEditor(type, newIndex);
+            updateSlideNumbers(list);
+            bindRemoveButton(newSlide, list, type);
+
+            if (type === 'mobile') {
                 updateMobileSyncStatus();
             }
-        });
-    }
-
-    function updateSlideNumbers($list: any): void {
-        $list.find('.popup-slide-item').each(function(this: HTMLElement, index: number) {
-            $(this).find('.popup-slide-title').text('Slide ' + (index + 1));
-        });
-    }
-
-    function reindexSlides($list: any): void {
-        const $repeater = $list.closest('.popup-slides-repeater');
-        const type = $repeater.data('type');
-        const key = type === 'desktop' ? '_popup_slides_desktop' : '_popup_slides_mobile';
-
-        $list.find('.popup-slide-item').each(function(this: HTMLElement, index: number) {
-            const $item = $(this);
-            $item.attr('data-index', index);
-
-            // Update textarea name
-            const $textarea = $item.find('textarea');
-            if ($textarea.length) {
-                $textarea.attr('name', key + '[' + index + ']');
-            }
-        });
-    }
-
-    function initTinyMCE(editorId: string): void {
-        if (typeof tinymce === 'undefined') return;
-
-        // Remove existing editor instance if it exists (prevents duplicates)
-        const existingEditor = tinymce.get(editorId);
-        if (existingEditor) {
-            existingEditor.remove();
+        } catch {
+            showAdminNotice('Failed to add slide. Please try again.');
+        } finally {
+            addBtn.disabled = false;
+            addBtn.textContent = BUTTON_TEXT.ADD_SLIDE;
         }
+    });
+}
 
-        // Get default settings from an existing editor if available
-        let baseSettings: any = {};
-        if (tinymce.editors.length > 0) {
-            const existingSettings = tinymce.editors[0].settings;
-            baseSettings = {
-                ...existingSettings,
-                selector: '#' + editorId,
-                body_class: editorId,
-            };
+function executeScripts(scriptsHtml: string): void {
+    const scriptContainer = document.createElement('div');
+    scriptContainer.innerHTML = scriptsHtml;
+    const scripts = scriptContainer.querySelectorAll('script');
+
+    scripts.forEach((oldScript) => {
+        const newScript = document.createElement('script');
+        newScript.textContent = oldScript.textContent;
+        document.body.appendChild(newScript);
+        document.body.removeChild(newScript);
+    });
+}
+
+function initNewSlideEditor(type: string, index: number): void {
+    const editorId = `popup_editor_${type}_${index}`;
+
+    setTimeout(() => {
+        if (!tinymce.get(editorId)) {
+            initTinyMCE(editorId);
         } else {
-            // Fallback settings
-            baseSettings = {
-                selector: '#' + editorId,
-                wpautop: true,
-                indent: false,
-                toolbar1: 'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,wp_more,spellchecker,fullscreen,wp_adv',
-                toolbar2: 'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,undo,redo,wp_help',
-                plugins: 'charmap,colorpicker,hr,lists,media,paste,tabfocus,textcolor,fullscreen,wordpress,wpautoresize,wpeditimage,wpemoji,wpgallery,wplink,wpdialogs,wptextpattern,wpview',
-                height: 200,
-                menubar: false,
-                branding: false,
-                convert_urls: false,
-                relative_urls: false,
-                remove_script_host: false,
-            };
+            addChangeHandlerToEditor(tinymce.get(editorId));
+        }
+    }, WP_SCRIPT_INIT_DELAY_MS);
+}
+
+function addChangeHandlerToEditor(editor: TinyMCEEditor | null): void {
+    if (!editor) return;
+    editor.on('change keyup', () => {
+        editor.save();
+    });
+}
+
+function bindExistingRemoveButtons(list: HTMLElement): void {
+    const repeater = list.closest<HTMLElement>('.popup-slides-repeater');
+    const type = repeater?.dataset.type ?? '';
+
+    list.querySelectorAll<HTMLElement>('.popup-slide-item').forEach((slide) => {
+        bindRemoveButton(slide, list, type);
+    });
+}
+
+function bindRemoveButton(slide: HTMLElement, list: HTMLElement, type: string): void {
+    const removeBtn = slide.querySelector('.popup-remove-slide');
+    if (!removeBtn) return;
+
+    removeBtn.addEventListener('click', () => {
+        const slideCount = list.querySelectorAll('.popup-slide-item').length;
+
+        if (slideCount <= 1) {
+            showAdminNotice('You must have at least one slide.', 'warning');
+            return;
         }
 
-        // Add setup callback for syncing
-        const originalSetup = baseSettings.setup;
-        baseSettings.setup = function(editor: any) {
-            if (typeof originalSetup === 'function') {
-                originalSetup(editor);
-            }
-            // Sync content to textarea on every change
-            editor.on('change keyup', function() {
-                editor.save();
-            });
+        removeTinyMCEInstance(slide);
+        slide.remove();
+        updateSlideNumbers(list);
+        reindexSlides(list, type);
+
+        if (type === 'mobile') {
+            updateMobileSyncStatus();
+        }
+    });
+}
+
+function removeTinyMCEInstance(slide: HTMLElement): void {
+    const textarea = slide.querySelector<HTMLTextAreaElement>('textarea');
+    const editorId = textarea?.id;
+    if (!editorId || typeof tinymce === 'undefined') return;
+
+    const editor = tinymce.get(editorId);
+    if (editor) {
+        editor.remove();
+    }
+}
+
+function updateSlideNumbers(list: HTMLElement): void {
+    list.querySelectorAll<HTMLElement>('.popup-slide-item').forEach((item, index) => {
+        const title = item.querySelector('.popup-slide-title');
+        if (title) {
+            title.textContent = `Slide ${index + 1}`;
+        }
+    });
+}
+
+function reindexSlides(list: HTMLElement, type: string): void {
+    const key = getSlideKey(type);
+
+    list.querySelectorAll<HTMLElement>('.popup-slide-item').forEach((item, index) => {
+        item.dataset.index = String(index);
+
+        const textarea = item.querySelector<HTMLTextAreaElement>('textarea');
+        if (textarea) {
+            textarea.name = `${key}[${index}]`;
+        }
+    });
+}
+
+function initTinyMCE(editorId: string): void {
+    if (typeof tinymce === 'undefined') return;
+
+    const existingEditor = tinymce.get(editorId);
+    if (existingEditor) {
+        existingEditor.remove();
+    }
+
+    const baseSettings = buildTinyMCESettings(editorId);
+    tinymce.init(baseSettings);
+    initQuicktags(editorId);
+}
+
+function buildTinyMCESettings(editorId: string): Record<string, unknown> {
+    let baseSettings: Record<string, unknown>;
+
+    if (tinymce.editors.length > 0) {
+        const existingSettings = tinymce.editors[0].settings;
+        baseSettings = {
+            ...existingSettings,
+            selector: `#${editorId}`,
+            body_class: editorId,
         };
+    } else {
+        baseSettings = getDefaultTinyMCESettings(editorId);
+    }
 
-        tinymce.init(baseSettings);
+    const originalSetup = baseSettings.setup;
+    baseSettings.setup = (editor: TinyMCEEditor) => {
+        if (typeof originalSetup === 'function') {
+            originalSetup(editor);
+        }
+        editor.on('change keyup', () => {
+            editor.save();
+        });
+    };
 
-        // Initialize quicktags if available
-        if (typeof quicktags !== 'undefined') {
-            quicktags({ id: editorId });
-            // Trigger quicktags initialization
-            if (typeof QTags !== 'undefined') {
-                QTags._buttonsInit();
-            }
+    return baseSettings;
+}
+
+function getDefaultTinyMCESettings(editorId: string): Record<string, unknown> {
+    return {
+        selector: `#${editorId}`,
+        wpautop: true,
+        indent: false,
+        toolbar1:
+            'formatselect,bold,italic,bullist,numlist,blockquote,alignleft,aligncenter,alignright,link,wp_more,spellchecker,fullscreen,wp_adv',
+        toolbar2:
+            'strikethrough,hr,forecolor,pastetext,removeformat,charmap,outdent,indent,undo,redo,wp_help',
+        plugins:
+            'charmap,colorpicker,hr,lists,media,paste,tabfocus,textcolor,fullscreen,wordpress,wpautoresize,wpeditimage,wpemoji,wpgallery,wplink,wpdialogs,wptextpattern,wpview',
+        height: 200,
+        menubar: false,
+        branding: false,
+        convert_urls: false,
+        relative_urls: false,
+        remove_script_host: false,
+    };
+}
+
+function initQuicktags(editorId: string): void {
+    if (typeof quicktags === 'undefined') return;
+
+    quicktags({ id: editorId });
+    if (typeof QTags !== 'undefined') {
+        QTags._buttonsInit();
+    }
+}
+
+function syncTinyMCEOnSubmit(): void {
+    // mousedown fires before click completes, ensuring sync happens before WordPress processes the form
+    document.addEventListener('mousedown', (e) => {
+        const target = e.target as HTMLElement;
+        if (
+            target.id === 'publish' ||
+            target.id === 'save-post' ||
+            (target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'submit')
+        ) {
+            syncAllEditors();
+        }
+    });
+
+    document.querySelector<HTMLFormElement>('form#post')?.addEventListener('submit', syncAllEditors);
+
+    // WordPress heartbeat API
+    document.addEventListener('heartbeat-send', syncAllEditors);
+}
+
+function syncAllEditors(): void {
+    if (typeof tinymce === 'undefined') return;
+
+    tinymce.triggerSave();
+
+    for (let i = 0; i < tinymce.editors.length; i++) {
+        const editor = tinymce.editors[i];
+        if (editor?.id?.startsWith('popup_editor_')) {
+            syncEditorToTextarea(editor);
         }
     }
+}
 
-    // Sync TinyMCE content to textareas before form submit
-    function syncTinyMCEOnSubmit(): void {
-        // Hook into WordPress's pre-submit using mousedown (fires before click completes)
-        $(document).on('mousedown', '#publish, #save-post, input[type="submit"]', function() {
-            syncAllEditors();
-        });
-        
-        // Also use the form submit event as backup
-        $('form#post').on('submit', function() {
-            syncAllEditors();
-        });
-        
-        // Hook into WordPress's heartbeat to periodically sync
-        $(document).on('heartbeat-send', function() {
-            syncAllEditors();
-        });
+function syncEditorToTextarea(editor: TinyMCEEditor): void {
+    try {
+        const content = editor.getContent();
+        const textarea = document.getElementById(editor.id) as HTMLTextAreaElement;
+
+        if (!textarea || content === undefined) return;
+
+        textarea.value = content;
+
+        if (!textarea.name || textarea.name === '') {
+            assignTextareaName(textarea, editor.id);
+        }
+    } catch (err) {
+        console.warn('Error syncing editor:', editor.id, err);
     }
-    
-    function syncAllEditors(): void {
-        if (typeof tinymce === 'undefined') return;
-        
-        // First, trigger WordPress's built-in save
-        tinymce.triggerSave();
-        
-        // Then manually sync each popup editor
-        for (let i = 0; i < tinymce.editors.length; i++) {
-            const editor = tinymce.editors[i];
-            if (editor && editor.id && editor.id.startsWith('popup_editor_')) {
-                try {
-                    const content = editor.getContent();
-                    const textarea = document.getElementById(editor.id) as HTMLTextAreaElement;
-                    if (textarea && content !== undefined) {
-                        textarea.value = content;
-                        // Also update the name attribute if needed
-                        if (!textarea.name || textarea.name === '') {
-                            const match = editor.id.match(/popup_editor_(desktop|mobile)_(\d+)/);
-                            if (match) {
-                                const type = match[1];
-                                const index = match[2];
-                                const key = type === 'desktop' ? '_popup_slides_desktop' : '_popup_slides_mobile';
-                                textarea.name = key + '[' + index + ']';
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.warn('Error syncing editor:', editor.id, err);
+}
+
+function assignTextareaName(textarea: HTMLTextAreaElement, editorId: string): void {
+    const match = editorId.match(/popup_editor_(desktop|mobile)_(\d+)/);
+    if (!match) return;
+
+    const [, type, index] = match;
+    const key = getSlideKey(type);
+    textarea.name = `${key}[${index}]`;
+}
+
+function initTabs(): void {
+    const tabsContainer = document.querySelector<HTMLElement>('.popup-content-tabs');
+    if (!tabsContainer) return;
+
+    const tabBtns = tabsContainer.querySelectorAll<HTMLButtonElement>('.popup-tab-btn');
+    const tabPanels = tabsContainer.querySelectorAll<HTMLElement>('.popup-tab-panel');
+
+    tabBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab ?? '';
+
+            tabBtns.forEach((b) => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+
+            tabPanels.forEach((panel) => {
+                panel.classList.remove('is-active');
+                if (panel.dataset.panel === tabId) {
+                    panel.classList.add('is-active');
                 }
-            }
-        }
-    }
+            });
 
-    /**
-     * Initialize tabbed content interface
-     */
-    function initTabs(): void {
-        const $tabsContainer = $('.popup-content-tabs');
-        if (!$tabsContainer.length) return;
-
-        const $tabBtns = $tabsContainer.find('.popup-tab-btn');
-        const $tabPanels = $tabsContainer.find('.popup-tab-panel');
-
-        $tabBtns.on('click', function(this: HTMLElement) {
-            const $btn = $(this);
-            const tabId = $btn.data('tab');
-
-            // Update active states
-            $tabBtns.removeClass('is-active');
-            $btn.addClass('is-active');
-
-            $tabPanels.removeClass('is-active');
-            $tabPanels.filter('[data-panel="' + tabId + '"]').addClass('is-active');
-
-            // Store preference in sessionStorage for this editing session
             try {
                 sessionStorage.setItem('popup_active_tab', tabId);
-            } catch (e) {
+            } catch {
                 // sessionStorage not available
             }
         });
-
-        // Restore last active tab from session
-        try {
-            const savedTab = sessionStorage.getItem('popup_active_tab');
-            if (savedTab) {
-                $tabBtns.filter('[data-tab="' + savedTab + '"]').trigger('click');
-            }
-        } catch (e) {
-            // sessionStorage not available
-        }
-    }
-
-    /**
-     * Update mobile tab sync indicator and notice based on content
-     */
-    function updateMobileSyncStatus(): void {
-        const $mobilePanel = $('.popup-tab-panel[data-panel="mobile"]');
-        const $mobileNotice = $mobilePanel.find('.popup-mobile-notice');
-        const $mobileTabBtn = $('.popup-tab-btn[data-tab="mobile"]');
-        const $syncIndicator = $mobileTabBtn.find('.popup-tab-sync');
-
-        // Check if mobile has any slides with content
-        let hasMobileContent = false;
-        $mobilePanel.find('.popup-slide-item').each(function(this: HTMLElement) {
-            const $textarea = $(this).find('textarea');
-            const editorId = $textarea.attr('id');
-            let content = $textarea.val() as string;
-
-            // Also check TinyMCE if available
-            if (editorId && typeof tinymce !== 'undefined') {
-                const editor = tinymce.get(editorId);
-                if (editor) {
-                    content = editor.getContent();
-                }
-            }
-
-            if (content && content.trim() !== '') {
-                hasMobileContent = true;
-                return false; // break
-            }
-        });
-
-        // Update UI based on content
-        if (hasMobileContent) {
-            $mobileNotice.addClass('is-hidden');
-            $syncIndicator.hide();
-        } else {
-            $mobileNotice.removeClass('is-hidden');
-            $syncIndicator.show();
-        }
-    }
-
-    // Initialize on document ready
-    $(document).ready(function() {
-        initTabs();
-        initSlidesRepeater();
-        syncTinyMCEOnSubmit();
-        
-        // Initial sync status check
-        setTimeout(updateMobileSyncStatus, DOM_RENDER_DELAY_MS);
-        
-        // Add change handlers to existing editors after they're initialized
-        setTimeout(function() {
-            if (typeof tinymce !== 'undefined') {
-                for (let i = 0; i < tinymce.editors.length; i++) {
-                    const editor = tinymce.editors[i];
-                    if (editor && editor.id && editor.id.startsWith('popup_editor_')) {
-                        editor.on('change keyup blur', function() {
-                            editor.save();
-                            // Update sync status when mobile content changes
-                            if (editor.id.includes('mobile')) {
-                                updateMobileSyncStatus();
-                            }
-                        });
-                    }
-                }
-            }
-        }, TINYMCE_READY_DELAY_MS);
     });
-})(jQuery);
+
+    restoreActiveTab(tabBtns);
+}
+
+function restoreActiveTab(tabBtns: NodeListOf<HTMLButtonElement>): void {
+    try {
+        const savedTab = sessionStorage.getItem('popup_active_tab');
+        if (savedTab) {
+            const targetBtn = Array.from(tabBtns).find((btn) => btn.dataset.tab === savedTab);
+            targetBtn?.click();
+        }
+    } catch {
+        // sessionStorage not available
+    }
+}
+
+function updateMobileSyncStatus(): void {
+    const mobilePanel = document.querySelector<HTMLElement>('.popup-tab-panel[data-panel="mobile"]');
+    const mobileNotice = mobilePanel?.querySelector<HTMLElement>('.popup-mobile-notice');
+    const mobileTabBtn = document.querySelector<HTMLElement>('.popup-tab-btn[data-tab="mobile"]');
+    const syncIndicator = mobileTabBtn?.querySelector<HTMLElement>('.popup-tab-sync');
+
+    if (!mobilePanel) return;
+
+    const hasMobileContent = checkMobileHasContent(mobilePanel);
+
+    if (hasMobileContent) {
+        mobileNotice?.classList.add('is-hidden');
+        if (syncIndicator) syncIndicator.style.display = 'none';
+    } else {
+        mobileNotice?.classList.remove('is-hidden');
+        if (syncIndicator) syncIndicator.style.display = '';
+    }
+}
+
+function checkMobileHasContent(mobilePanel: HTMLElement): boolean {
+    const slides = Array.from(mobilePanel.querySelectorAll('.popup-slide-item')) as HTMLElement[];
+
+    for (const slide of slides) {
+        const textarea = slide.querySelector('textarea') as HTMLTextAreaElement | null;
+        const editorId = textarea?.id;
+        let content = textarea?.value ?? '';
+
+        if (editorId && typeof tinymce !== 'undefined') {
+            const editor = tinymce.get(editorId);
+            if (editor) {
+                content = editor.getContent();
+            }
+        }
+
+        if (content.trim()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function setupExistingEditorChangeHandlers(): void {
+    if (typeof tinymce === 'undefined') return;
+
+    for (let i = 0; i < tinymce.editors.length; i++) {
+        const editor = tinymce.editors[i];
+        if (editor?.id?.startsWith('popup_editor_')) {
+            editor.on('change keyup blur', () => {
+                editor.save();
+                if (editor.id.includes('mobile')) {
+                    updateMobileSyncStatus();
+                }
+            });
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    initSlidesRepeater();
+    syncTinyMCEOnSubmit();
+
+    setTimeout(updateMobileSyncStatus, DOM_RENDER_DELAY_MS);
+    setTimeout(setupExistingEditorChangeHandlers, TINYMCE_READY_DELAY_MS);
+});

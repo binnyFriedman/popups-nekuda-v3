@@ -3,6 +3,8 @@
   "version": "3.0.2",
   "description": "WordPress popup plugin - zero dependencies",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build:ts": "esbuild src/ts/popup.ts --bundle --minify --sourcemap=external --outfile=assets/js/popup.js && esbuild src/ts/admin.ts --bundle --minify --sourcemap=external --outfile=assets/js/admin.js",
     "build:scss": "sass src/scss:assets/css --style=compressed --source-map",
     "build": "npm run build:ts && npm run build:scss",
@@ -24,7 +26,9 @@
     "archiver": "^6.0.2",
     "concurrently": "^8.2.0",
     "esbuild": "^0.19.0",
+    "jsdom": "^25.0.0",
     "sass": "^1.69.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.0"
   }
 }
