@@ -68,4 +68,101 @@ class Fields {
         }
         echo '</fieldset>';
     }
+
+    /**
+     * Render a Select2 multi-select field with AJAX search
+     * 
+     * @param int    $post_id Post ID
+     * @param string $key     Meta key
+     * @param array  $args    Field arguments
+     */
+    public static function select2_multi(int $post_id, string $key, array $args = []): void {
+        $values = self::get($post_id, $key, []);
+        if (!is_array($values)) {
+            $values = [];
+        }
+
+        $label = $args['label'] ?? '';
+        $description = $args['description'] ?? '';
+        $placeholder = $args['placeholder'] ?? __('Search...', 'popups-nekuda');
+
+        echo '<div class="popup-field popup-field--select2">';
+        
+        if ($label) {
+            echo '<label for="' . esc_attr($key) . '">' . esc_html($label) . '</label>';
+        }
+
+        echo '<select id="' . esc_attr($key) . '" name="' . esc_attr($key) . '[]" class="popup-select2" multiple="multiple" data-placeholder="' . esc_attr($placeholder) . '" style="width: 100%;">';
+
+        // Render pre-selected options
+        foreach ($values as $value) {
+            $label_text = self::get_rule_label($value);
+            echo '<option value="' . esc_attr($value) . '" selected="selected">' . esc_html($label_text) . '</option>';
+        }
+
+        echo '</select>';
+
+        if ($description) {
+            echo '<p class="description">' . esc_html($description) . '</p>';
+        }
+
+        echo '</div>';
+    }
+
+    /**
+     * Get human-readable label for a rule value
+     * 
+     * @param string $value Rule value (e.g., 'post:42', 'term:category:5')
+     * @return string Human-readable label
+     */
+    public static function get_rule_label(string $value): string {
+        // Special pages
+        if ($value === 'special:home') {
+            return __('Homepage', 'popups-nekuda');
+        }
+
+        if ($value === 'special:blog') {
+            return __('Blog Page', 'popups-nekuda');
+        }
+
+        // Post type
+        if (str_starts_with($value, 'post_type:')) {
+            $type = substr($value, 10);
+            $post_type_obj = get_post_type_object($type);
+            if ($post_type_obj) {
+                return sprintf(__('All %s', 'popups-nekuda'), $post_type_obj->labels->name);
+            }
+            return $value;
+        }
+
+        // Specific post
+        if (str_starts_with($value, 'post:')) {
+            $id = (int) substr($value, 5);
+            $post = get_post($id);
+            if ($post) {
+                $type_obj = get_post_type_object($post->post_type);
+                $type_label = $type_obj ? $type_obj->labels->singular_name : $post->post_type;
+                return sprintf('%s (%s)', $post->post_title, $type_label);
+            }
+            return sprintf(__('Post #%d', 'popups-nekuda'), $id);
+        }
+
+        // Taxonomy term
+        if (str_starts_with($value, 'term:')) {
+            $parts = explode(':', $value);
+            if (count($parts) === 3) {
+                $taxonomy = $parts[1];
+                $term_id = (int) $parts[2];
+                $term = get_term($term_id, $taxonomy);
+                if ($term && !is_wp_error($term)) {
+                    $tax_obj = get_taxonomy($taxonomy);
+                    $tax_label = $tax_obj ? $tax_obj->labels->singular_name : $taxonomy;
+                    return sprintf('%s (%s)', $term->name, $tax_label);
+                }
+            }
+            return $value;
+        }
+
+        return $value;
+    }
 }

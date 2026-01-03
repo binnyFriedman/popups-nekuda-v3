@@ -77,7 +77,34 @@ class Frontend {
             'order'          => 'ASC',
         ]);
 
-        return array_filter($popups, [$this, 'is_popup_scheduled']);
+        // Build context once for all popups
+        $context = DisplayRules::build_context();
+
+        return array_filter($popups, function (\WP_Post $popup) use ($context) {
+            return $this->is_popup_scheduled($popup)
+                && $this->passes_display_rules($popup, $context);
+        });
+    }
+
+    /**
+     * Check if popup passes display rules for current page
+     * 
+     * @param \WP_Post $popup   The popup post
+     * @param array    $context Current page context from DisplayRules::build_context()
+     * @return bool
+     */
+    private function passes_display_rules(\WP_Post $popup, array $context): bool {
+        $include = Fields::get($popup->ID, '_popup_include', []);
+        $exclude = Fields::get($popup->ID, '_popup_exclude', []);
+
+        if (!is_array($include)) {
+            $include = [];
+        }
+        if (!is_array($exclude)) {
+            $exclude = [];
+        }
+
+        return DisplayRules::passes($include, $exclude, $context);
     }
 
     /**

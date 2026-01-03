@@ -16,6 +16,7 @@ class Admin {
         add_action('save_post_popup', [$this, 'save_meta']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('wp_ajax_popup_get_editor', [$this, 'ajax_get_editor']);
+        add_action('wp_ajax_popup_search_content', [$this, 'ajax_search_content']);
     }
 
     /**
@@ -44,6 +45,15 @@ class Admin {
             'popup_display_constraints',
             __('Display Constraints', 'popups-nekuda'),
             [$this, 'render_display_constraints'],
+            'popup',
+            'side',
+            'default'
+        );
+
+        add_meta_box(
+            'popup_display_rules',
+            __('Display Rules', 'popups-nekuda'),
+            [$this, 'render_display_rules'],
             'popup',
             'side',
             'default'
@@ -139,6 +149,23 @@ class Admin {
             'label'   => __('Max Height (px or empty for auto)', 'popups-nekuda'),
             'type'    => 'number',
             'attrs'   => 'min="100" step="10" placeholder="auto"',
+        ]);
+    }
+
+    /**
+     * Render Display Rules meta box
+     */
+    public function render_display_rules(\WP_Post $post): void {
+        Fields::select2_multi($post->ID, '_popup_include', [
+            'label'       => __('Include', 'popups-nekuda'),
+            'description' => __('Leave empty to show on all pages', 'popups-nekuda'),
+            'placeholder' => __('Search pages, posts, categories...', 'popups-nekuda'),
+        ]);
+
+        Fields::select2_multi($post->ID, '_popup_exclude', [
+            'label'       => __('Exclude', 'popups-nekuda'),
+            'description' => __('Hide popup on these pages', 'popups-nekuda'),
+            'placeholder' => __('Search pages, posts, categories...', 'popups-nekuda'),
         ]);
     }
 
@@ -261,6 +288,103 @@ class Admin {
     }
 
     /**
+     * AJAX handler for Select2 content search
+     * 
+     * Returns posts, pages, CPTs, and taxonomy terms matching the search query
+     */
+    public function ajax_search_content(): void {
+        check_ajax_referer('popup_admin_nonce', 'nonce');
+
+        $search = sanitize_text_field($_GET['q'] ?? '');
+        $results = [];
+
+        // Add special options (always show at top when no search or matching)
+        if (empty($search) || stripos('homepage', $search) !== false || stripos('home', $search) !== false) {
+            $results[] = [
+                'id'   => 'special:home',
+                'text' => __('Homepage', 'popups-nekuda'),
+                'type' => __('Special', 'popups-nekuda'),
+            ];
+        }
+
+        if (empty($search) || stripos('blog', $search) !== false) {
+            $results[] = [
+                'id'   => 'special:blog',
+                'text' => __('Blog Page', 'popups-nekuda'),
+                'type' => __('Special', 'popups-nekuda'),
+            ];
+        }
+
+        // Add post types (when no search or searching for type names)
+        $post_types = get_post_types(['public' => true], 'objects');
+        foreach ($post_types as $post_type) {
+            if ($post_type->name === 'attachment') {
+                continue;
+            }
+
+            $type_name = $post_type->labels->name;
+            if (empty($search) || stripos($type_name, $search) !== false || stripos('all ' . $type_name, $search) !== false) {
+                $results[] = [
+                    'id'   => 'post_type:' . $post_type->name,
+                    'text' => sprintf(__('All %s', 'popups-nekuda'), $type_name),
+                    'type' => __('Post Type', 'popups-nekuda'),
+                ];
+            }
+        }
+
+        // Search posts/pages
+        if (!empty($search)) {
+            $posts = get_posts([
+                'post_type'      => array_keys($post_types),
+                'post_status'    => 'publish',
+                's'              => $search,
+                'posts_per_page' => 20,
+                'orderby'        => 'relevance',
+            ]);
+
+            foreach ($posts as $post) {
+                if ($post->post_type === 'attachment') {
+                    continue;
+                }
+
+                $type_obj = get_post_type_object($post->post_type);
+                $type_label = $type_obj ? $type_obj->labels->singular_name : $post->post_type;
+
+                $results[] = [
+                    'id'   => 'post:' . $post->ID,
+                    'text' => $post->post_title,
+                    'type' => $type_label,
+                ];
+            }
+        }
+
+        // Search taxonomy terms
+        $taxonomies = get_taxonomies(['public' => true], 'objects');
+        foreach ($taxonomies as $taxonomy) {
+            $terms = get_terms([
+                'taxonomy'   => $taxonomy->name,
+                'search'     => $search,
+                'number'     => 20,
+                'hide_empty' => false,
+            ]);
+
+            if (is_wp_error($terms)) {
+                continue;
+            }
+
+            foreach ($terms as $term) {
+                $results[] = [
+                    'id'   => 'term:' . $taxonomy->name . ':' . $term->term_id,
+                    'text' => $term->name,
+                    'type' => $taxonomy->labels->singular_name,
+                ];
+            }
+        }
+
+        wp_send_json(['results' => $results]);
+    }
+
+    /**
      * Save meta fields
      */
     public function save_meta(int $post_id): void {
@@ -306,6 +430,13 @@ class Admin {
         $max_height = $_POST['_popup_max_height'] ?? '';
         Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
 
+        // Display rules (include/exclude)
+        $include = $this->sanitize_display_rules($_POST['_popup_include'] ?? []);
+        Fields::save($post_id, '_popup_include', $include);
+
+        $exclude = $this->sanitize_display_rules($_POST['_popup_exclude'] ?? []);
+        Fields::save($post_id, '_popup_exclude', $exclude);
+
         // Desktop slides
         $raw_desktop = isset($_POST['_popup_slides_desktop']) ? $_POST['_popup_slides_desktop'] : [];
         
@@ -348,6 +479,51 @@ class Admin {
     }
 
     /**
+     * Sanitize display rules array
+     * 
+     * Valid formats:
+     * - special:home
+     * - special:blog
+     * - post:123
+     * - post_type:car
+     * - term:category:5
+     * 
+     * @param mixed $rules Raw input from form
+     * @return array Sanitized array of rule strings
+     */
+    private function sanitize_display_rules($rules): array {
+        if (!is_array($rules)) {
+            return [];
+        }
+
+        $sanitized = [];
+        $valid_prefixes = ['special:', 'post:', 'post_type:', 'term:'];
+
+        foreach ($rules as $rule) {
+            if (!is_string($rule) || empty($rule)) {
+                continue;
+            }
+
+            $rule = sanitize_text_field($rule);
+
+            // Validate rule format
+            $is_valid = false;
+            foreach ($valid_prefixes as $prefix) {
+                if (str_starts_with($rule, $prefix)) {
+                    $is_valid = true;
+                    break;
+                }
+            }
+
+            if ($is_valid) {
+                $sanitized[] = $rule;
+            }
+        }
+
+        return array_unique($sanitized);
+    }
+
+    /**
      * Enqueue admin styles and scripts
      */
     public function enqueue_admin_assets(string $hook): void {
@@ -364,12 +540,28 @@ class Admin {
         // Enqueue media library for dynamically added editors
         wp_enqueue_media();
 
+        // Enqueue Select2 from CDN
+        wp_enqueue_style(
+            'select2',
+            'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
+            [],
+            '4.1.0'
+        );
+
+        wp_enqueue_script(
+            'select2',
+            'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
+            ['jquery'],
+            '4.1.0',
+            true
+        );
+
         $css_file = POPUP_DIR . 'assets/css/admin.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
                 'popup-admin',
                 POPUP_URL . 'assets/css/admin.css',
-                [],
+                ['select2'],
                 POPUP_VERSION
             );
         }
@@ -379,7 +571,7 @@ class Admin {
             wp_enqueue_script(
                 'popup-admin',
                 POPUP_URL . 'assets/js/admin.js',
-                ['jquery', 'wp-tinymce'],
+                ['jquery', 'wp-tinymce', 'select2'],
                 POPUP_VERSION,
                 true
             );
@@ -392,6 +584,9 @@ class Admin {
 
         // Inline script for trigger type toggle
         wp_add_inline_script('jquery', $this->get_trigger_toggle_script());
+
+        // Inline script for Select2 initialization
+        wp_add_inline_script('select2', $this->get_select2_init_script(), 'after');
     }
 
     /**
@@ -407,6 +602,60 @@ class Admin {
     $(document).ready(function() {
         updateTriggerVisibility();
         $('input[name="_popup_trigger_type"]').on('change', updateTriggerVisibility);
+    });
+})(jQuery);
+JS;
+    }
+
+    /**
+     * Get inline script for Select2 initialization
+     */
+    private function get_select2_init_script(): string {
+        return <<<'JS'
+(function($) {
+    $(document).ready(function() {
+        $('.popup-select2').each(function() {
+            var $select = $(this);
+            
+            $select.select2({
+                ajax: {
+                    url: popupAdmin.ajaxUrl,
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            action: 'popup_search_content',
+                            nonce: popupAdmin.nonce,
+                            q: params.term || ''
+                        };
+                    },
+                    processResults: function(data) {
+                        return data;
+                    },
+                    cache: true
+                },
+                placeholder: $select.data('placeholder') || 'Search...',
+                allowClear: true,
+                minimumInputLength: 0,
+                templateResult: function(item) {
+                    if (item.loading) {
+                        return item.text;
+                    }
+                    
+                    var $container = $('<div class="popup-select2-result"></div>');
+                    $container.append('<span class="popup-select2-result__text">' + item.text + '</span>');
+                    
+                    if (item.type) {
+                        $container.append('<span class="popup-select2-result__type">' + item.type + '</span>');
+                    }
+                    
+                    return $container;
+                },
+                templateSelection: function(item) {
+                    return item.text;
+                }
+            });
+        });
     });
 })(jQuery);
 JS;
