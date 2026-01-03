@@ -47,6 +47,10 @@ class Frontend {
                 POPUPS_NEKUDA_VERSION,
                 true
             );
+
+            wp_localize_script('popups-nekuda-frontend', 'popupSettings', [
+                'devMode' => defined('WP_DEBUG') && WP_DEBUG,
+            ]);
         }
     }
 
@@ -111,7 +115,7 @@ class Frontend {
      * Check if popup is within schedule
      */
     private function is_popup_scheduled(\WP_Post $popup): bool {
-        $today = date('Y-m-d');
+        $today = wp_date('Y-m-d');
 
         $start = Fields::get($popup->ID, '_popup_schedule_start', '');
         $end = Fields::get($popup->ID, '_popup_schedule_end', '');
