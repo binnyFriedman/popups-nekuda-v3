@@ -9,8 +9,6 @@ if (!defined('ABSPATH')) {
 
 class Popup_Frontend {
 
-    private bool $has_popups = false;
-
     public function __construct() {
         add_action('wp_enqueue_scripts', [$this, 'maybe_enqueue_assets']);
         add_action('wp_footer', [$this, 'render_popups']);
@@ -26,8 +24,7 @@ class Popup_Frontend {
             return;
         }
 
-        $this->has_popups = true;
-
+        // Enqueue CSS
         $css_file = POPUP_DIR . 'assets/css/popup.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
@@ -35,6 +32,18 @@ class Popup_Frontend {
                 POPUP_URL . 'assets/css/popup.css',
                 [],
                 POPUP_VERSION
+            );
+        }
+
+        // Enqueue JS
+        $js_file = POPUP_DIR . 'assets/js/popup.js';
+        if (file_exists($js_file)) {
+            wp_enqueue_script(
+                'popup-frontend',
+                POPUP_URL . 'assets/js/popup.js',
+                [],
+                POPUP_VERSION,
+                true
             );
         }
     }
