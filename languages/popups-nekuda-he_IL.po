@@ -212,11 +212,11 @@ msgstr "תוכן #%d"
 
 #: templates/popup.php:36
 msgid "Close popup"
-msgstr "סגור"
+msgstr "סגור פופאפ"
 
 #: templates/popup.php:41 templates/popup.php:48
 msgid "Pause slideshow"
-msgstr "השהה"
+msgstr "השהה פופאפ"
 
 #: templates/popup.php:62 templates/popup.php:79
 msgid "slide"
