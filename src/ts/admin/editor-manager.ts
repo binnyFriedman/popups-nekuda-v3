@@ -105,7 +105,7 @@ export class EditorManager {
         tinymce?.triggerSave();
 
         tinymce?.editors.forEach((editor) => {
-            if (!editor?.id?.startsWith('popup_editor_')) return;
+            if (!this.isOurEditor(editor)) return;
 
             const textarea = document.getElementById(editor.id) as HTMLTextAreaElement | null;
             if (!textarea?.name) {
@@ -116,4 +116,8 @@ export class EditorManager {
             }
         });
     };
+
+    private isOurEditor(editor: TinyMCEEditor): boolean {
+        return editor.id.startsWith('popup_editor_');
+    }
 }
