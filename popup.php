@@ -104,7 +104,10 @@ function popups_nekuda_init_updates(): void {
     $api = $update_checker->getVcsApi();
     $api->enableReleaseAssets();
 }
-add_action('admin_init', 'popups_nekuda_init_updates');
+// Must run before admin_init so the update checker can register its own
+// admin_init hook in time to add the "Check for updates" plugin row link.
+// Running on plugins_loaded also lets background cron update checks work.
+add_action('plugins_loaded', 'popups_nekuda_init_updates');
 
 /**
  * Plugin activation hook
