@@ -1,6 +1,6 @@
 {
   "name": "popups-nekuda",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "WordPress popup plugin - zero dependencies",
   "scripts": {
     "test": "vitest run",
