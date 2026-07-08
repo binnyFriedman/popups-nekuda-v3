@@ -133,6 +133,86 @@ class Fields {
     }
 
     /**
+     * Render URL rules repeater field
+     *
+     * @param int    $post_id Post ID
+     * @param string $key     Meta key
+     * @param array  $args    Field arguments
+     */
+    public static function urlRules(int $post_id, string $key, array $args = []): void {
+        $rules = self::get($post_id, $key, []);
+        if (!is_array($rules)) {
+            $rules = [];
+        }
+
+        $label = $args['label'] ?? '';
+        $description = $args['description'] ?? '';
+        $match_types = [
+            DisplayRules::URL_STARTS_WITH => __('Starts with', POPUPS_NEKUDA_TEXT_DOMAIN),
+            DisplayRules::URL_ENDS_WITH   => __('Ends with', POPUPS_NEKUDA_TEXT_DOMAIN),
+            DisplayRules::URL_EXACT       => __('Exactly matches', POPUPS_NEKUDA_TEXT_DOMAIN),
+            DisplayRules::URL_CONTAINS    => __('Contains', POPUPS_NEKUDA_TEXT_DOMAIN),
+        ];
+
+        echo '<div class="popup-field popup-field--url-rules" data-field-key="' . esc_attr($key) . '">';
+
+        if ($label) {
+            echo '<label>' . esc_html($label) . '</label>';
+        }
+
+        echo '<div class="popup-url-rules-list">';
+
+        foreach ($rules as $index => $rule) {
+            self::renderUrlRuleRow($key, (int) $index, $rule, $match_types);
+        }
+
+        echo '</div>';
+
+        echo '<button type="button" class="button popup-url-rule-add" data-field-key="' . esc_attr($key) . '">';
+        echo esc_html__('Add URL rule', POPUPS_NEKUDA_TEXT_DOMAIN);
+        echo '</button>';
+
+        if ($description) {
+            echo '<p class="description">' . esc_html($description) . '</p>';
+        }
+
+        echo '<template class="popup-url-rule-template" data-field-key="' . esc_attr($key) . '">';
+        self::renderUrlRuleRow($key, '__INDEX__', ['type' => DisplayRules::URL_STARTS_WITH, 'value' => ''], $match_types);
+        echo '</template>';
+
+        echo '</div>';
+    }
+
+    /**
+     * Render a single URL rule row
+     *
+     * @param string $key         Meta key
+     * @param int|string $index   Row index
+     * @param array  $rule        Rule data {type, value}
+     * @param array  $match_types Available match types
+     */
+    private static function renderUrlRuleRow(string $key, $index, array $rule, array $match_types): void {
+        $type = $rule['type'] ?? DisplayRules::URL_STARTS_WITH;
+        $value = $rule['value'] ?? '';
+
+        echo '<div class="popup-url-rule-row">';
+
+        echo '<select name="' . esc_attr($key) . '[' . esc_attr((string) $index) . '][type]" class="popup-url-rule-type">';
+        foreach ($match_types as $type_value => $type_label) {
+            echo '<option value="' . esc_attr($type_value) . '"' . selected($type, $type_value, false) . '>';
+            echo esc_html($type_label);
+            echo '</option>';
+        }
+        echo '</select>';
+
+        echo '<input type="text" class="popup-url-rule-value" name="' . esc_attr($key) . '[' . esc_attr((string) $index) . '][value]" value="' . esc_attr($value) . '" placeholder="https://example.com/path">';
+
+        echo '<button type="button" class="button-link popup-url-rule-remove" aria-label="' . esc_attr__('Remove rule', POPUPS_NEKUDA_TEXT_DOMAIN) . '">&times;</button>';
+
+        echo '</div>';
+    }
+
+    /**
      * Get human-readable label for a rule value
      *
      * @param string $value Rule value (e.g., 'post:42', 'term:category:5')

@@ -99,6 +99,8 @@ class Frontend {
     private function passes_display_rules(\WP_Post $popup, array $context): bool {
         $include = Fields::get($popup->ID, '_popup_include', []);
         $exclude = Fields::get($popup->ID, '_popup_exclude', []);
+        $url_include = Fields::get($popup->ID, '_popup_url_include', []);
+        $url_exclude = Fields::get($popup->ID, '_popup_url_exclude', []);
 
         if (!is_array($include)) {
             $include = [];
@@ -106,8 +108,14 @@ class Frontend {
         if (!is_array($exclude)) {
             $exclude = [];
         }
+        if (!is_array($url_include)) {
+            $url_include = [];
+        }
+        if (!is_array($url_exclude)) {
+            $url_exclude = [];
+        }
 
-        return DisplayRules::passes($include, $exclude, $context);
+        return DisplayRules::evaluate($include, $exclude, $url_include, $url_exclude, $context);
     }
 
     /**

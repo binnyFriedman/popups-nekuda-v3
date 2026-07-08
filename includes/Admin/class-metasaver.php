@@ -78,6 +78,12 @@ class MetaSaver {
 
         $exclude = self::sanitizeRules($_POST['_popup_exclude'] ?? []);
         Fields::save($post_id, '_popup_exclude', $exclude);
+
+        $url_include = self::sanitizeUrlRules($_POST['_popup_url_include'] ?? []);
+        Fields::save($post_id, '_popup_url_include', $url_include);
+
+        $url_exclude = self::sanitizeUrlRules($_POST['_popup_url_exclude'] ?? []);
+        Fields::save($post_id, '_popup_url_exclude', $url_exclude);
     }
 
     private static function saveSlides(int $post_id): void {
@@ -158,5 +164,42 @@ class MetaSaver {
 
         return array_unique($sanitized);
     }
-}
 
+    /**
+     * Sanitize URL rules array
+     * Made public for unit testing
+     *
+     * Valid format: [{type: starts_with|ends_with|exact|contains, value: string}, ...]
+     *
+     * @param mixed $rules Input rules array
+     * @return array Sanitized and re-indexed rules array
+     */
+    public static function sanitizeUrlRules($rules): array {
+        if (!is_array($rules)) {
+            return [];
+        }
+
+        $valid_types = DisplayRules::URL_MATCH_TYPES;
+        $sanitized = [];
+
+        foreach ($rules as $rule) {
+            if (!is_array($rule)) {
+                continue;
+            }
+
+            $type = sanitize_text_field($rule['type'] ?? '');
+            $value = sanitize_text_field($rule['value'] ?? '');
+
+            if (!in_array($type, $valid_types, true) || $value === '') {
+                continue;
+            }
+
+            $sanitized[] = [
+                'type'  => $type,
+                'value' => $value,
+            ];
+        }
+
+        return array_values($sanitized);
+    }
+}

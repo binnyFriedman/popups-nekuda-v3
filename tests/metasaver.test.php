@@ -244,5 +244,81 @@ describe('sanitizeSlides', function () {
 
 });
 
+describe('sanitizeUrlRules', function () {
+
+    describe('Valid Rules', function () {
+        t('starts_with rule passes through', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'starts_with', 'value' => 'https://site.com/']]) === [
+                ['type' => 'starts_with', 'value' => 'https://site.com/'],
+            ]);
+
+        t('ends_with rule passes through', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'ends_with', 'value' => '/contact/']]) === [
+                ['type' => 'ends_with', 'value' => '/contact/'],
+            ]);
+
+        t('exact rule passes through', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'exact', 'value' => 'https://site.com/page']]) === [
+                ['type' => 'exact', 'value' => 'https://site.com/page'],
+            ]);
+
+        t('contains rule passes through', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'contains', 'value' => '?campaign=summer']]) === [
+                ['type' => 'contains', 'value' => '?campaign=summer'],
+            ]);
+
+        t('multiple valid rules preserved and re-indexed', fn () =>
+            MetaSaver::sanitizeUrlRules([
+                ['type' => 'starts_with', 'value' => 'https://a.com/'],
+                ['type' => 'contains', 'value' => 'b'],
+            ]) === [
+                ['type' => 'starts_with', 'value' => 'https://a.com/'],
+                ['type' => 'contains', 'value' => 'b'],
+            ]);
+    });
+
+    describe('Invalid Rules Rejected', function () {
+        t('invalid type rejected', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'regex', 'value' => 'https://site.com/']]) === []);
+
+        t('empty value rejected', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'starts_with', 'value' => '']]) === []);
+
+        t('whitespace-only value rejected', fn () =>
+            MetaSaver::sanitizeUrlRules([['type' => 'starts_with', 'value' => '   ']]) === []);
+
+        t('missing type rejected', fn () =>
+            MetaSaver::sanitizeUrlRules([['value' => 'https://site.com/']]) === []);
+
+        t('non-array rule rejected', fn () =>
+            MetaSaver::sanitizeUrlRules(['starts_with:https://site.com/']) === []);
+
+        t('mixed valid and invalid - only valid kept', function () {
+            $result = MetaSaver::sanitizeUrlRules([
+                ['type' => 'starts_with', 'value' => 'https://site.com/'],
+                ['type' => 'invalid', 'value' => 'https://other.com/'],
+                ['type' => 'contains', 'value' => ''],
+                ['type' => 'ends_with', 'value' => '/page/'],
+            ]);
+            return $result === [
+                ['type' => 'starts_with', 'value' => 'https://site.com/'],
+                ['type' => 'ends_with', 'value' => '/page/'],
+            ];
+        });
+    });
+
+    describe('Non-Array Input', function () {
+        t('string input returns empty array', fn () =>
+            MetaSaver::sanitizeUrlRules('https://site.com/') === []);
+
+        t('null input returns empty array', fn () =>
+            MetaSaver::sanitizeUrlRules(null) === []);
+
+        t('empty array returns empty array', fn () =>
+            MetaSaver::sanitizeUrlRules([]) === []);
+    });
+
+});
+
 });
 

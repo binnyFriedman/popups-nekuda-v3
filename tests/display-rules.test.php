@@ -156,4 +156,96 @@ describe('Rule Helpers', function () {
     });
 });
 
+describe('URL Matching', function () {
+    $url = 'https://Site.com/Models/XC90/?Campaign=Summer';
+
+    t('starts_with - matches', fn () =>
+        DisplayRules::url_matches(DisplayRules::URL_STARTS_WITH, 'https://site.com/models/', $url));
+
+    t('starts_with - no match', fn () =>
+        !DisplayRules::url_matches(DisplayRules::URL_STARTS_WITH, 'https://other.com/', $url));
+
+    t('ends_with - matches', fn () =>
+        DisplayRules::url_matches(DisplayRules::URL_ENDS_WITH, '?campaign=summer', $url));
+
+    t('ends_with - no match', fn () =>
+        !DisplayRules::url_matches(DisplayRules::URL_ENDS_WITH, '/other/', $url));
+
+    t('exact - matches (case-insensitive)', fn () =>
+        DisplayRules::url_matches(DisplayRules::URL_EXACT, 'https://site.com/models/xc90/?campaign=summer', $url));
+
+    t('exact - no match', fn () =>
+        !DisplayRules::url_matches(DisplayRules::URL_EXACT, 'https://site.com/models/xc90/', $url));
+
+    t('contains - matches', fn () =>
+        DisplayRules::url_matches(DisplayRules::URL_CONTAINS, '/models/xc90', $url));
+
+    t('contains - no match', fn () =>
+        !DisplayRules::url_matches(DisplayRules::URL_CONTAINS, '/v90/', $url));
+
+    t('invalid type returns false', fn () =>
+        !DisplayRules::url_matches('invalid', 'https://site.com/', $url));
+
+    t('empty value returns false', fn () =>
+        !DisplayRules::url_matches(DisplayRules::URL_CONTAINS, '', $url));
+
+    t('trims whitespace', fn () =>
+        DisplayRules::url_matches(DisplayRules::URL_STARTS_WITH, '  https://site.com/  ', '  ' . $url . '  '));
+});
+
+describe('evaluate (content + URL rules)', function () {
+    $ctx = ['url' => 'https://site.com/models/xc90/'];
+
+    t('empty rules = show everywhere', fn () =>
+        DisplayRules::evaluate([], [], [], [], $ctx));
+
+    t('url include only - matches', fn () =>
+        DisplayRules::evaluate([], [], [['type' => 'starts_with', 'value' => 'https://site.com/models/']], [], $ctx));
+
+    t('url include only - no match', fn () =>
+        !DisplayRules::evaluate([], [], [['type' => 'starts_with', 'value' => 'https://other.com/']], [], $ctx));
+
+    t('url exclude overrides url include', fn () =>
+        !DisplayRules::evaluate(
+            [],
+            [],
+            [['type' => 'starts_with', 'value' => 'https://site.com/']],
+            [['type' => 'contains', 'value' => '/models/']],
+            $ctx
+        ));
+
+    t('content include OR url include - content matches', fn () =>
+        DisplayRules::evaluate(
+            ['post:42'],
+            [],
+            [['type' => 'starts_with', 'value' => 'https://other.com/']],
+            [],
+            array_merge($ctx, ['post_id' => 42])
+        ));
+
+    t('content include OR url include - url matches', fn () =>
+        DisplayRules::evaluate(
+            ['post:99'],
+            [],
+            [['type' => 'contains', 'value' => '/models/']],
+            [],
+            $ctx
+        ));
+
+    t('content include OR url include - neither matches', fn () =>
+        !DisplayRules::evaluate(
+            ['post:99'],
+            [],
+            [['type' => 'starts_with', 'value' => 'https://other.com/']],
+            [],
+            $ctx
+        ));
+
+    t('url exclude only - matches hides', fn () =>
+        !DisplayRules::evaluate([], [], [], [['type' => 'contains', 'value' => 'xc90']], $ctx));
+
+    t('url exclude only - no match shows', fn () =>
+        DisplayRules::evaluate([], [], [], [['type' => 'contains', 'value' => 'v90']], $ctx));
+});
+
 });

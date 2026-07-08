@@ -103,6 +103,17 @@ class Assets {
                 true
             );
         }
+
+        $url_rules_file = POPUPS_NEKUDA_DIR . 'assets/js/admin-url-rules.js';
+        if (file_exists($url_rules_file)) {
+            wp_enqueue_script(
+                'popups-nekuda-url-rules',
+                POPUPS_NEKUDA_URL . 'assets/js/admin-url-rules.js',
+                ['jquery'],
+                POPUPS_NEKUDA_VERSION,
+                true
+            );
+        }
     }
 }
 

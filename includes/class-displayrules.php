@@ -24,6 +24,20 @@ class DisplayRules {
     public const SPECIAL_HOME = 'home';
     public const SPECIAL_BLOG = 'blog';
 
+    // URL match types
+    public const URL_STARTS_WITH = 'starts_with';
+    public const URL_ENDS_WITH   = 'ends_with';
+    public const URL_EXACT       = 'exact';
+    public const URL_CONTAINS    = 'contains';
+
+    /** @var string[] */
+    public const URL_MATCH_TYPES = [
+        self::URL_STARTS_WITH,
+        self::URL_ENDS_WITH,
+        self::URL_EXACT,
+        self::URL_CONTAINS,
+    ];
+
     /**
      * Check if rules pass for given context
      * 
@@ -44,6 +58,102 @@ class DisplayRules {
         }
 
         return true;
+    }
+
+    /**
+     * Evaluate content and URL include/exclude rules together
+     *
+     * @param array $include       Content include rules
+     * @param array $exclude       Content exclude rules
+     * @param array $url_include   URL include rules [{type, value}, ...]
+     * @param array $url_exclude   URL exclude rules [{type, value}, ...]
+     * @param array $context       Current page context (must include 'url' for URL rules)
+     * @return bool
+     */
+    public static function evaluate(
+        array $include,
+        array $exclude,
+        array $url_include,
+        array $url_exclude,
+        array $context
+    ): bool {
+        $has_include = !empty($include) || !empty($url_include);
+        $url = $context['url'] ?? '';
+
+        if ($has_include) {
+            $content_match = !empty($include) && self::matches_any($include, $context);
+            $url_match = !empty($url_include) && self::url_matches_any($url_include, $url);
+
+            if (!$content_match && !$url_match) {
+                return false;
+            }
+        }
+
+        if (!empty($exclude) && self::matches_any($exclude, $context)) {
+            return false;
+        }
+
+        if (!empty($url_exclude) && self::url_matches_any($url_exclude, $url)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if any URL rule matches the given URL (OR logic)
+     *
+     * @param array  $rules URL rules [{type, value}, ...]
+     * @param string $url   Full request URL
+     * @return bool
+     */
+    public static function url_matches_any(array $rules, string $url): bool {
+        foreach ($rules as $rule) {
+            if (!is_array($rule)) {
+                continue;
+            }
+
+            $type = $rule['type'] ?? '';
+            $value = $rule['value'] ?? '';
+
+            if (self::url_matches($type, $value, $url)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a single URL rule matches
+     *
+     * @param string $type  Match type (starts_with, ends_with, exact, contains)
+     * @param string $value Rule value
+     * @param string $url   Full request URL
+     * @return bool
+     */
+    public static function url_matches(string $type, string $value, string $url): bool {
+        if (!in_array($type, self::URL_MATCH_TYPES, true)) {
+            return false;
+        }
+
+        $value = trim($value);
+        $url = trim($url);
+
+        if ($value === '' || $url === '') {
+            return false;
+        }
+
+        $value_lower = strtolower($value);
+        $url_lower = strtolower($url);
+
+        return match ($type) {
+            self::URL_STARTS_WITH => str_starts_with($url_lower, $value_lower),
+            self::URL_ENDS_WITH   => str_ends_with($url_lower, $value_lower),
+            self::URL_EXACT       => $url_lower === $value_lower,
+            self::URL_CONTAINS    => str_contains($url_lower, $value_lower),
+            default               => false,
+        };
     }
 
     /**
@@ -154,12 +264,17 @@ class DisplayRules {
      * @return array Context array for rule matching
      */
     public static function build_context(): array {
+        $host = $_SERVER['HTTP_HOST'] ?? wp_parse_url(home_url(), PHP_URL_HOST);
+        $scheme = is_ssl() ? 'https' : 'http';
+        $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+
         $context = [
             'is_front_page' => is_front_page(),
             'is_home'       => is_home() && !is_front_page(),
             'post_id'       => null,
             'post_type'     => null,
             'terms'         => [],
+            'url'           => $scheme . '://' . $host . $request_uri,
         ];
 
         if (is_singular()) {
