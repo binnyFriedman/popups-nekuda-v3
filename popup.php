@@ -3,7 +3,7 @@
  * Plugin Name: Popups Nekuda
  * Plugin URI: https://nekuda.co.il
  * Description: A modern popup system for WordPress. Zero external dependencies.
- * Version: 4.1.0
+ * Version: 4.2.0
  * Author: Nekuda
  * Author URI: https://nekuda.co.il
  * License: GPL2
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('POPUPS_NEKUDA_VERSION', '4.1.0');
+define('POPUPS_NEKUDA_VERSION', '4.2.0');
 define('POPUPS_NEKUDA_FILE', __FILE__);
 define('POPUPS_NEKUDA_DIR', plugin_dir_path(__FILE__));
 define('POPUPS_NEKUDA_URL', plugin_dir_url(__FILE__));
