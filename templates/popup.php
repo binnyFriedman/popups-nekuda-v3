@@ -35,7 +35,6 @@ function popups_nekuda_render_slides(array $slides, string $variant): void {
 <?php
 }
 
-$max_height_style = !empty($data['max_height']) ? $data['max_height'] . 'px' : 'auto';
 $popup_title_id = 'popup-title-' . esc_attr($data['id']);
 $has_multiple_slides_desktop = !empty($data['slides_desktop']) && count($data['slides_desktop']) > 1;
 $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['slides_mobile']) > 1;
@@ -45,7 +44,7 @@ $has_multiple_slides_mobile = !empty($data['slides_mobile']) && count($data['sli
     data-timeout="<?php echo esc_attr($data['trigger_timeout']); ?>"
     data-cookie-key="<?php echo esc_attr($data['cookie_key']); ?>"
     data-cookie-expiry="<?php echo esc_attr($data['cookie_expiry']); ?>"
-    style="--popup-max-width: <?php echo esc_attr($data['max_width']); ?>px; --popup-max-height: <?php echo esc_attr($max_height_style); ?>;">
+    style="--popup-max-width: <?php echo esc_attr($data['max_width']); ?>vw; --popup-max-width-mobile: <?php echo esc_attr($data['max_width_mobile']); ?>vw; --popup-max-height: <?php echo esc_attr($data['max_height']); ?>vh;">
 
     <div class="popup__overlay"></div>
 

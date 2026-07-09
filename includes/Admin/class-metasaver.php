@@ -5,6 +5,7 @@
 
 namespace PopupsNekuda\Admin;
 
+use PopupsNekuda\DisplayConstraints;
 use PopupsNekuda\Fields;
 use PopupsNekuda\DisplayRules;
 
@@ -65,11 +66,15 @@ class MetaSaver {
     }
 
     private static function saveDisplayConstraints(int $post_id): void {
-        $max_width = absint($_POST['_popup_max_width'] ?? 600);
-        Fields::save($post_id, '_popup_max_width', $max_width ?: 600);
+        $max_width = DisplayConstraints::normalizeWidth(
+            $_POST['_popup_max_width'] ?? DisplayConstraints::MAX_WIDTH_VW_DEFAULT
+        );
+        Fields::save($post_id, '_popup_max_width', $max_width);
 
-        $max_height = $_POST['_popup_max_height'] ?? '';
-        Fields::save($post_id, '_popup_max_height', $max_height ? absint($max_height) : '');
+        $max_height = DisplayConstraints::normalizeHeight(
+            $_POST['_popup_max_height'] ?? DisplayConstraints::MAX_HEIGHT_VH_DEFAULT
+        );
+        Fields::save($post_id, '_popup_max_height', $max_height);
     }
 
     private static function saveDisplayRules(int $post_id): void {

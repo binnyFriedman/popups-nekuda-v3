@@ -5,6 +5,7 @@
 
 namespace PopupsNekuda\Admin\MetaBoxes;
 
+use PopupsNekuda\DisplayConstraints;
 use PopupsNekuda\Fields;
 
 if (!defined('ABSPATH')) {
@@ -28,16 +29,25 @@ class ConstraintsMetaBox {
 
     public static function render(\WP_Post $post): void {
         Fields::text($post->ID, '_popup_max_width', [
-            'label'   => __('Max Width (px)', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'label'   => __('Max Width (vw)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
-            'default' => '600',
-            'attrs'   => ['min' => '200', 'step' => '10'],
+            'default' => (string) DisplayConstraints::MAX_WIDTH_VW_DEFAULT,
+            'attrs'   => [
+                'min'  => (string) DisplayConstraints::MIN_PERCENT,
+                'max'  => (string) DisplayConstraints::MAX_PERCENT,
+                'step' => '1',
+            ],
         ]);
 
         Fields::text($post->ID, '_popup_max_height', [
-            'label'   => __('Max Height (px or empty for auto)', POPUPS_NEKUDA_TEXT_DOMAIN),
+            'label'   => __('Max Height (vh)', POPUPS_NEKUDA_TEXT_DOMAIN),
             'type'    => 'number',
-            'attrs'   => ['min' => '100', 'step' => '10', 'placeholder' => 'auto'],
+            'default' => (string) DisplayConstraints::MAX_HEIGHT_VH_DEFAULT,
+            'attrs'   => [
+                'min'  => (string) DisplayConstraints::MIN_PERCENT,
+                'max'  => (string) DisplayConstraints::MAX_PERCENT,
+                'step' => '1',
+            ],
         ]);
     }
 }

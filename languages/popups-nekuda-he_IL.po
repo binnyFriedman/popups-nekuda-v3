@@ -120,12 +120,12 @@ msgid "Schedule End Date (optional)"
 msgstr "הפסק להציג בתאריך (אופציונלי)"
 
 #: includes/class-admin.php:133
-msgid "Max Width (px)"
-msgstr "רוחב מרבי (פיקסלים)"
+msgid "Max Width (vw)"
+msgstr "רוחב מרבי (vw)"
 
 #: includes/class-admin.php:140
-msgid "Max Height (px or empty for auto)"
-msgstr "גובה מרבי (השאר ריק לגובה אוטומטי)"
+msgid "Max Height (vh)"
+msgstr "גובה מרבי (vh)"
 
 #: includes/class-admin.php:151
 #. Pages where popup WILL show

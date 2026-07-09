@@ -175,8 +175,13 @@ class Frontend {
             'trigger_timeout' => Fields::get($popup->ID, '_popup_trigger_timeout', 3),
             'cookie_key'      => $cookie_key,
             'cookie_expiry'   => Fields::get($popup->ID, '_popup_cookie_expiry', 30),
-            'max_width'       => Fields::get($popup->ID, '_popup_max_width', 600),
-            'max_height'      => Fields::get($popup->ID, '_popup_max_height', ''),
+            'max_width'        => DisplayConstraints::normalizeWidth(
+                Fields::get($popup->ID, '_popup_max_width', DisplayConstraints::MAX_WIDTH_VW_DEFAULT)
+            ),
+            'max_width_mobile' => DisplayConstraints::MAX_WIDTH_MOBILE_VW_DEFAULT,
+            'max_height'       => DisplayConstraints::normalizeHeight(
+                Fields::get($popup->ID, '_popup_max_height', DisplayConstraints::MAX_HEIGHT_VH_DEFAULT)
+            ),
             'slides_desktop'  => is_array($slides_desktop) ? $slides_desktop : [],
             'slides_mobile'   => is_array($slides_mobile) ? $slides_mobile : [],
         ];

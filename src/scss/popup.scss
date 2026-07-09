@@ -119,14 +119,10 @@ body.popup-open {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  // Honor the admin-configured width, but never let it exceed 80% of the
-  // viewport. Shared with the image so both stay in lockstep.
-  --popup-width-cap: min(var(--popup-max-width, 600px), 80vw);
-  // Shrink-wrap the content (image) so large images are not clipped by a fixed
-  // width; the cap above provides the upper bound.
+  // Viewport caps are set on `.popup` via inline styles; fallbacks match defaults.
   width: fit-content;
-  max-width: var(--popup-width-cap);
-  max-height: 90vh;
+  max-width: var(--popup-max-width, 80vw);
+  max-height: var(--popup-max-height, 90vh);
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
@@ -171,13 +167,13 @@ body.popup-open {
   }
   
   // Images are never upscaled (source images are already large); only shrunk.
-  // Width is bounded by the shared cap (admin width, clamped to 80vw). No height
-  // limit: tall images keep their ratio and scroll vertically within the popup.
+  // Width is bounded by the shared viewport cap. No height limit: tall images
+  // keep their ratio and scroll vertically within the popup.
   img {
     display: block;
     width: auto;
     height: auto;
-    max-width: var(--popup-width-cap);
+    max-width: var(--popup-max-width, 80vw);
     margin-inline: auto;
   }
 }
@@ -208,10 +204,13 @@ body.popup-open {
     display: block;
   }
 
-  // Mobile: still honor the admin width, but allow up to 90vw of the narrower
-  // viewport. Redefining the cap cascades to the image automatically.
+  // Mobile: wider viewport cap (default 90vw).
   .popup__container {
-    --popup-width-cap: min(var(--popup-max-width, 600px), 90vw);
+    max-width: var(--popup-max-width-mobile, 90vw);
+  }
+
+  .popup__content img {
+    max-width: var(--popup-max-width-mobile, 90vw);
   }
 }
 

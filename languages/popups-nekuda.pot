@@ -109,11 +109,11 @@ msgid "Schedule End Date (optional)"
 msgstr ""
 
 #: includes/class-admin.php:133
-msgid "Max Width (px)"
+msgid "Max Width (vw)"
 msgstr ""
 
 #: includes/class-admin.php:140
-msgid "Max Height (px or empty for auto)"
+msgid "Max Height (vh)"
 msgstr ""
 
 #: includes/class-admin.php:151
